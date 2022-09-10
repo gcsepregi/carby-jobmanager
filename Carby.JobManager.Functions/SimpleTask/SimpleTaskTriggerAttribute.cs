@@ -9,6 +9,8 @@ namespace Carby.JobManager.Functions.SimpleTask;
 public class SimpleTaskTriggerAttribute : Attribute
 {
     public string TaskName { get; }
+    
+    public string? JobName { get; set; }
 
     public SimpleTaskTriggerAttribute(string taskName)
     {

@@ -2,30 +2,30 @@ using Microsoft.Azure.WebJobs.Host.Bindings;
 
 namespace Carby.JobManager.Functions.SimpleTask;
 
-public class SimpleTaskValueProvider : IValueBinder
+internal class SimpleTaskReturnValueHandler : IValueBinder
 {
-    private object _value;
+    private readonly SimpleTaskExtensionConfigProvider _configProvider;
 
-    public SimpleTaskValueProvider(object value)
+    public SimpleTaskReturnValueHandler(SimpleTaskExtensionConfigProvider configProvider)
     {
-        _value = value;
+        _configProvider = configProvider;
     }
 
     public Task<object> GetValueAsync()
     {
-        return Task.FromResult(_value);
+        return null!;
     }
 
     public string ToInvokeString()
     {
-        return _value.ToString() ?? string.Empty;
+        return string.Empty;
     }
 
     public Type Type => typeof(object);
     
     public Task SetValueAsync(object value, CancellationToken cancellationToken)
     {
-        _value = value;
+        Console.WriteLine("ReturnHandler: SetValueAsync");
         return Task.CompletedTask;
     }
 }

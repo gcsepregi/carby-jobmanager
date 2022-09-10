@@ -33,7 +33,8 @@ public class SimpleTaskTriggerBinding : ITriggerBinding
     {
         return new TriggerParameterDescriptor
         {
-            Name = "SimpleTask"
+            Name = "SimpleTask",
+            Type = "MySimpleTaskTriggerCustomType"
         };
     }
 

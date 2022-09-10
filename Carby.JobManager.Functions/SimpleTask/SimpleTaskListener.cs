@@ -1,3 +1,5 @@
+using Azure.Messaging.ServiceBus;
+using Microsoft.Azure.WebJobs.Host.Executors;
 using Microsoft.Azure.WebJobs.Host.Listeners;
 
 namespace Carby.JobManager.Functions.SimpleTask;
@@ -6,6 +8,7 @@ public class SimpleTaskListener : IListener
 {
     private readonly ListenerFactoryContext _context;
     private readonly SimpleTaskTriggerBindingContext _triggerBindingContext;
+    private ServiceBusProcessor? _serviceBusProcessor;
 
     public SimpleTaskListener(ListenerFactoryContext context, SimpleTaskTriggerBindingContext triggerBindingContext)
     {
@@ -15,21 +18,51 @@ public class SimpleTaskListener : IListener
 
     public void Dispose()
     {
-        throw new NotImplementedException();
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        if (_triggerBindingContext.TriggerSource != null)
+        {
+            _serviceBusProcessor = await _triggerBindingContext.TriggerSource.CreateProcessorAsync(
+                _triggerBindingContext.Attribute!.JobName,
+                _triggerBindingContext.Attribute!.TaskName.ToLowerInvariant(),
+                ProcessMessageAsync, 
+                ProcessErrorAsync);
+            await _serviceBusProcessor.StartProcessingAsync(cancellationToken);
+        }
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        if (_serviceBusProcessor != null)
+        {
+            await _serviceBusProcessor.StopProcessingAsync(cancellationToken);
+        }
     }
 
     public void Cancel()
     {
-        throw new NotImplementedException();
+        Task.Run(async () =>
+        {
+            if (_serviceBusProcessor != null)
+            {
+                await _serviceBusProcessor.StopProcessingAsync();
+            }
+        });
     }
+
+    private async Task ProcessErrorAsync(ProcessErrorEventArgs arg)
+    {
+        await Console.Error.WriteLineAsync(arg.Exception.ToString());
+    }
+
+    private async Task ProcessMessageAsync(ProcessMessageEventArgs arg)
+    {
+        await _context.Executor.TryExecuteAsync(new TriggeredFunctionData
+        {
+            TriggerValue = new TaskRequest()
+        }, CancellationToken.None);
+    }
+
 }

@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.Azure.WebJobs.Host.Triggers;
 
 namespace Carby.JobManager.Functions.SimpleTask;
@@ -13,6 +14,13 @@ public class SimpleTaskTriggerBindingProvider : ITriggerBindingProvider
 
     public Task<ITriggerBinding> TryCreateAsync(TriggerBindingProviderContext context)
     {
+        var parameter = context.Parameter;
+        var attribute = parameter.GetCustomAttribute<SimpleTaskTriggerAttribute>(false);
+        if (attribute == null)
+        {
+            return Task.FromResult<ITriggerBinding>(null);
+        }
+
         return Task.FromResult<ITriggerBinding>(new SimpleTaskTriggerBinding(_configProvider.CreateContext(context)));
     }
 }
