@@ -1,3 +1,4 @@
+using Carby.JobManager.Functions.CarbyClient;
 using Carby.JobManager.Functions.Services;
 using Carby.JobManager.Functions.SimpleTask;
 using Microsoft.Azure.WebJobs;
@@ -15,8 +16,9 @@ public static class CarbyWebJobsBuilderExtensions
         }
 
         builder.AddExtension<SimpleTaskExtensionConfigProvider>();
+        builder.AddExtension<JobManagerClientExtionConfigProvider>();
         builder.Services.AddSingleton<ICommonServices, CommonServices>();
-        builder.Services.AddSingleton<IServiceBusService, ServiceBusService>();
+        builder.Services.AddSingleton<IMessagingService, ServiceBusMessagingService>();
         return builder;
     }
 }

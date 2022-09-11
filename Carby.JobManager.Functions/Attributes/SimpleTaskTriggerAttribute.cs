@@ -1,6 +1,6 @@
 using Microsoft.Azure.WebJobs.Description;
 
-namespace Carby.JobManager.Functions.SimpleTask;
+namespace Carby.JobManager.Functions.Attributes;
 
 [AttributeUsage(AttributeTargets.Parameter)]
 #pragma warning disable CS0618

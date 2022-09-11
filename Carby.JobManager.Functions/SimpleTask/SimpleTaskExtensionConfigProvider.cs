@@ -1,4 +1,5 @@
 using System.Reflection;
+using Carby.JobManager.Functions.Attributes;
 using Carby.JobManager.Functions.Services;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 using Microsoft.Azure.WebJobs.Host.Config;
@@ -8,11 +9,11 @@ namespace Carby.JobManager.Functions.SimpleTask;
 
 public class SimpleTaskExtensionConfigProvider : IExtensionConfigProvider
 {
-    private readonly IServiceBusService _serviceBus;
+    private readonly IMessagingService _messagingServiceBus;
 
-    public SimpleTaskExtensionConfigProvider(IServiceBusService messagingProvider)
+    public SimpleTaskExtensionConfigProvider(IMessagingService messagingProvider)
     {
-        _serviceBus = messagingProvider;
+        _messagingServiceBus = messagingProvider;
     }
     
     public void Initialize(ExtensionConfigContext context)
@@ -25,7 +26,7 @@ public class SimpleTaskExtensionConfigProvider : IExtensionConfigProvider
     {
         return new SimpleTaskTriggerBindingContext
         {
-            TriggerSource = _serviceBus,
+            TriggerSource = _messagingServiceBus,
             SimpleTaskReturnValueHandler = CreateReturnValueHandler(),
             Attribute = context.Parameter.GetCustomAttribute<SimpleTaskTriggerAttribute>()
         };

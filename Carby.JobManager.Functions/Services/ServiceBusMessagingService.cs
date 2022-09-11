@@ -4,27 +4,20 @@ using Azure.Messaging.ServiceBus.Administration;
 
 namespace Carby.JobManager.Functions.Services;
 
-public class ServiceBusService : IServiceBusService
+public class ServiceBusMessagingService : IMessagingService
 {
     private static readonly MemoryCache Cache = MemoryCache.Default;
     
-    private readonly ICommonServices _commonServices;
-
     private static string GetServiceBusConnection(string? jobName)
         => Environment.GetEnvironmentVariable($"{jobName ?? ICommonServices.DefaultJobName}:ServiceBusConnection")!;
 
-    public ServiceBusService(ICommonServices commonServices)
-    {
-        _commonServices = commonServices;
-    }
-    
-    public async Task<ServiceBusProcessor> CreateProcessorAsync(string? jobName, string queueName, Func<ProcessMessageEventArgs, Task> processMessageCallback, Func<ProcessErrorEventArgs, Task> processErrorCallback)
+    public async Task<IMessageProcessor> CreateProcessorAsync(string? jobName, string queueName, Func<ProcessMessageEventArgs, Task> processMessageCallback, Func<ProcessErrorEventArgs, Task> processErrorCallback)
     {
         await EnsureQueueExistsAsync(jobName, queueName);
         var processor = CreateServiceBusClient(jobName).CreateProcessor(queueName);
         processor.ProcessErrorAsync += processErrorCallback;
         processor.ProcessMessageAsync += processMessageCallback;
-        return processor;
+        return new ServiceBusMessageProcessorWrapper(processor);
     }
 
     private async Task EnsureQueueExistsAsync(string? jobName, string queueName)

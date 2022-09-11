@@ -1,4 +1,5 @@
 using Azure.Messaging.ServiceBus;
+using Carby.JobManager.Functions.Services;
 using Microsoft.Azure.WebJobs.Host.Executors;
 using Microsoft.Azure.WebJobs.Host.Listeners;
 
@@ -8,7 +9,7 @@ public class SimpleTaskListener : IListener
 {
     private readonly ListenerFactoryContext _context;
     private readonly SimpleTaskTriggerBindingContext _triggerBindingContext;
-    private ServiceBusProcessor? _serviceBusProcessor;
+    private IMessageProcessor? _serviceBusProcessor;
 
     public SimpleTaskListener(ListenerFactoryContext context, SimpleTaskTriggerBindingContext triggerBindingContext)
     {
