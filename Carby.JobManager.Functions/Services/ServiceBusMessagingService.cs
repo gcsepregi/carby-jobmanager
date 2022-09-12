@@ -1,16 +1,23 @@
 using System.Runtime.Caching;
+using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 
 namespace Carby.JobManager.Functions.Services;
 
-public class ServiceBusMessagingService : IMessagingService
+internal sealed class ServiceBusMessagingService : IMessagingService
 {
+    private readonly INamedJobCollection _namedJobCollection;
     private static readonly MemoryCache Cache = MemoryCache.Default;
     
     private static string GetServiceBusConnection(string? jobName)
         => Environment.GetEnvironmentVariable($"{jobName ?? ICommonServices.DefaultJobName}:ServiceBusConnection")!;
 
+    public ServiceBusMessagingService(INamedJobCollection namedJobCollection)
+    {
+        _namedJobCollection = namedJobCollection;
+    }
+    
     public async Task<IMessageProcessor> CreateProcessorAsync(string? jobName, string queueName, Func<ProcessMessageEventArgs, Task> processMessageCallback, Func<ProcessErrorEventArgs, Task> processErrorCallback)
     {
         await EnsureQueueExistsAsync(jobName, queueName);
@@ -18,6 +25,13 @@ public class ServiceBusMessagingService : IMessagingService
         processor.ProcessErrorAsync += processErrorCallback;
         processor.ProcessMessageAsync += processMessageCallback;
         return new ServiceBusMessageProcessorWrapper(processor);
+    }
+
+    public async Task TriggerJobAsync(string? jobName)
+    {
+        var jobDescriptor = _namedJobCollection[jobName ?? ICommonServices.DefaultJobName];
+        var messageSender = CreateServiceBusClient(jobName).CreateSender(jobDescriptor.StartTask);
+        await messageSender.SendMessageAsync(new ServiceBusMessage(JsonSerializer.Serialize(new TaskRequest())));
     }
 
     private async Task EnsureQueueExistsAsync(string? jobName, string queueName)
@@ -31,7 +45,7 @@ public class ServiceBusMessagingService : IMessagingService
 
     private ServiceBusClient CreateServiceBusClient(string? jobName)
     {
-        var cacheItemKey = $"ServiceBusClient:{jobName}";
+        var cacheItemKey = $"ServiceBusClient:{jobName ?? ICommonServices.DefaultJobName}";
         if (Cache.Contains(cacheItemKey))
         {
             return (ServiceBusClient)Cache.Get(cacheItemKey)!;
@@ -49,7 +63,7 @@ public class ServiceBusMessagingService : IMessagingService
     
     private ServiceBusAdministrationClient CreateServiceBusAdministrationClient(string? jobName)
     {
-        var cacheItemKey = $"ServiceBusAdministrationClient:{jobName}";
+        var cacheItemKey = $"ServiceBusAdministrationClient:{jobName ?? ICommonServices.DefaultJobName}";
         if (Cache.Contains(cacheItemKey))
         {
             return (ServiceBusAdministrationClient)Cache.Get(cacheItemKey)!;

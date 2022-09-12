@@ -16,9 +16,10 @@ public static class CarbyWebJobsBuilderExtensions
         }
 
         builder.AddExtension<SimpleTaskExtensionConfigProvider>();
-        builder.AddExtension<JobManagerClientExtionConfigProvider>();
+        builder.AddExtension<JobManagerClientExtensionConfigProvider>();
         builder.Services.AddSingleton<ICommonServices, CommonServices>();
         builder.Services.AddSingleton<IMessagingService, ServiceBusMessagingService>();
+        builder.Services.AddSingleton<INamedJobCollection, NamedJobCollection>();
         return builder;
     }
 }

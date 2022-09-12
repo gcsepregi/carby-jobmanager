@@ -10,4 +10,6 @@ public interface IMessagingService
         Func<ProcessMessageEventArgs, Task> processMessageCallback,
         Func<ProcessErrorEventArgs, Task> processErrorCallback
         );
+
+    Task TriggerJobAsync(string? jobName);
 }

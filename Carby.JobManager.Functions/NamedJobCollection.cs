@@ -7,6 +7,14 @@ internal sealed class NamedJobCollection : INamedJobCollection
 {
     private readonly IDictionary<string, JobDescriptor> _namedJobCollectionImplementation = new Dictionary<string, JobDescriptor>();
 
+    public NamedJobCollection(IEnumerable<IJobDescriptorBuilder> jobDescriptorBuilders)
+    {
+        foreach (var builder in jobDescriptorBuilders)
+        {
+            _namedJobCollectionImplementation[builder.Name] = builder.Build();
+        }
+    }
+    
     public IEnumerator<KeyValuePair<string, JobDescriptor>> GetEnumerator()
     {
         return _namedJobCollectionImplementation.GetEnumerator();
