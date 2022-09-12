@@ -13,7 +13,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IJobDescriptorBuilder>(provider =>
         {
             var jobBuilder = new JobDescriptorBuilder();
-            jobBuilder.Name = name;
+            ((IJobDescriptorBuilder)jobBuilder).Name = name;
             jobDescriptorBuilderCb(jobBuilder);
             return jobBuilder;
         });

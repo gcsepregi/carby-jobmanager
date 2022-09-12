@@ -2,7 +2,7 @@ namespace Carby.JobManager.Functions.JobModel;
 
 public interface IJobDescriptorBuilder
 {
-    string Name { get; set; }
+    internal string Name { get; set; }
     IJobDescriptorBuilder StartWith(string taskName);
     IJobDescriptorBuilder EndWith(string taskName);
     IJobDescriptorBuilder HandleFailureWith(string taskName);
