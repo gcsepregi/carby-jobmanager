@@ -3,7 +3,7 @@ namespace Carby.JobManager.Functions.JobModel;
 internal sealed class JobDescriptorBuilder : IJobDescriptorBuilder
 {
     private readonly JobDescriptor _jobDescriptor;
-    string IJobDescriptorBuilder.Name { get; set; }
+    string IJobDescriptorBuilder.Name { get; set; } = string.Empty;
 
     public JobDescriptorBuilder()
     {

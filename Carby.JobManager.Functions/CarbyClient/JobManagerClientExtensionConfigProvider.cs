@@ -7,12 +7,17 @@ namespace Carby.JobManager.Functions.CarbyClient;
 internal sealed class JobManagerClientExtensionConfigProvider : IExtensionConfigProvider
 {
     private readonly IMessagingService _messagingService;
+    private readonly IJobContextManagerService _jobContextManagerService;
 
-    public JobManagerClientExtensionConfigProvider(IMessagingService messagingService)
+    public JobManagerClientExtensionConfigProvider(
+        IMessagingService messagingService, 
+        IJobContextManagerService jobContextManagerService
+        )
     {
         _messagingService = messagingService;
+        _jobContextManagerService = jobContextManagerService;
     }
-    
+
     public void Initialize(ExtensionConfigContext context)
     {
         var bindingRule = context.AddBindingRule<JobManagerClientAttribute>();
@@ -21,6 +26,7 @@ internal sealed class JobManagerClientExtensionConfigProvider : IExtensionConfig
 
     private IJobManagerClient CreateJobManagerClient(JobManagerClientAttribute attribute)
     {
-        return new JobManagerClient(_messagingService);
+        return new JobManagerClient(_messagingService, _jobContextManagerService);
     }
+
 }

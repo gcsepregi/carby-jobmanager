@@ -20,6 +20,7 @@ public static class CarbyWebJobsBuilderExtensions
         builder.Services.AddSingleton<ICommonServices, CommonServices>();
         builder.Services.AddSingleton<IMessagingService, ServiceBusMessagingService>();
         builder.Services.AddSingleton<INamedJobCollection, NamedJobCollection>();
+        builder.Services.AddSingleton<IJobContextManagerService, JobContextManagerService>();
         return builder;
     }
 }

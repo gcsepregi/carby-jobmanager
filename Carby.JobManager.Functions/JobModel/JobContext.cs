@@ -1,14 +1,30 @@
 using System.Collections;
+using Azure;
+using Azure.Data.Tables;
 
 namespace Carby.JobManager.Functions.JobModel;
 
-internal sealed class JobContext : IJobContext, IDictionary<string, object>
+internal sealed class JobContext : IJobContext, ITableEntity
 {
-    private IDictionary<string, object> _dictionaryImplementation;
+    private readonly IDictionary<string, object> _dictionaryImplementation;
 
-    public JobContext()
+    public string JobId { get; set; }
+    public string PartitionKey { get; set; }
+    public string RowKey
     {
-        _dictionaryImplementation = new Dictionary<string, object>();
+        get => JobId;
+        set => JobId = value;
+    }
+
+    public DateTimeOffset? Timestamp { get; set; }
+    public ETag ETag { get; set; }
+
+    public ICollection<object> Values => _dictionaryImplementation.Values;
+    public JobContext(string jobName, Dictionary<string, object>? dictObject)
+    {
+        _dictionaryImplementation = dictObject ?? new Dictionary<string, object>();
+        JobId = Guid.NewGuid().ToString("D");
+        PartitionKey = jobName;
     }
     
     public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
@@ -78,5 +94,4 @@ internal sealed class JobContext : IJobContext, IDictionary<string, object>
 
     public ICollection<string> Keys => _dictionaryImplementation.Keys;
 
-    public ICollection<object> Values => _dictionaryImplementation.Values;
 }

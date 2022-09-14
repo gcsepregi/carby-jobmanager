@@ -2,7 +2,7 @@ using Azure.Messaging.ServiceBus;
 
 namespace Carby.JobManager.Functions.Services;
 
-public class ServiceBusMessageProcessorWrapper : IMessageProcessor
+internal sealed class ServiceBusMessageProcessorWrapper : IMessageProcessor
 {
     private readonly ServiceBusProcessor _processor;
 

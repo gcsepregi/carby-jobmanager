@@ -15,7 +15,7 @@ public class SimpleTaskExtensionConfigProvider : IExtensionConfigProvider
     {
         _messagingServiceBus = messagingProvider;
     }
-    
+
     public void Initialize(ExtensionConfigContext context)
     {
         var triggerRule = context.AddBindingRule<SimpleTaskTriggerAttribute>();
