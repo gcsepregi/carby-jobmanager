@@ -1,11 +1,10 @@
-using Azure.Messaging.ServiceBus;
 using Carby.JobManager.Functions.Services;
 using Microsoft.Azure.WebJobs.Host.Executors;
 using Microsoft.Azure.WebJobs.Host.Listeners;
 
 namespace Carby.JobManager.Functions.SimpleTask;
 
-public class SimpleTaskListener : IListener
+internal sealed class SimpleTaskListener : IListener
 {
     private readonly ListenerFactoryContext _context;
     private readonly SimpleTaskTriggerBindingContext _triggerBindingContext;
@@ -53,17 +52,23 @@ public class SimpleTaskListener : IListener
         });
     }
 
-    private async Task ProcessErrorAsync(ProcessErrorEventArgs arg)
+    private async Task ProcessErrorAsync(Exception exception)
     {
-        await Console.Error.WriteLineAsync(arg.Exception.ToString());
+        await Console.Error.WriteLineAsync(exception.ToString());
     }
 
-    private async Task ProcessMessageAsync(ProcessMessageEventArgs arg)
+    private async Task<MessageProcessorResult> ProcessMessageAsync(TaskRequest arg, CancellationToken cancellationToken)
     {
-        await _context.Executor.TryExecuteAsync(new TriggeredFunctionData
+        var result = await _context.Executor.TryExecuteAsync(new TriggeredFunctionData
         {
             TriggerValue = new TaskRequest()
         }, CancellationToken.None);
+
+        return new MessageProcessorResult
+        {
+            Succeeded = result.Succeeded,
+            Exception = result.Exception
+        };
     }
 
 }

@@ -2,13 +2,13 @@ using Azure.Messaging.ServiceBus;
 
 namespace Carby.JobManager.Functions.Services;
 
-public interface IMessagingService
+internal interface IMessagingService
 {
     public Task<IMessageProcessor> CreateProcessorAsync(
         string? jobName,
         string queueName,
-        Func<ProcessMessageEventArgs, Task> processMessageCallback,
-        Func<ProcessErrorEventArgs, Task> processErrorCallback
+        Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>> processMessageCallback,
+        Func<Exception, Task> processErrorCallback
         );
 
     Task TriggerJobAsync(string? jobName);

@@ -1,0 +1,158 @@
+using System.Collections.Concurrent;
+using Azure;
+using Azure.Storage.Queues;
+using Azure.Storage.Queues.Models;
+
+namespace Carby.JobManager.Functions.Services;
+
+internal sealed class StorageQueueMessageProcessor : IMessageProcessor
+{
+    private readonly QueueClient _queueClient;
+    private readonly QueueClient _poisonQueueClient;
+    private readonly BlockingCollection<QueueMessage> _blockingQueue;
+    private readonly Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>> _processMessageCallback;
+    private readonly Func<Exception, Task> _processErrorCallback;
+    private bool _stopRequested;
+    private Task? _emitterTask;
+    private Task? _receiverTask;
+
+    public StorageQueueMessageProcessor(QueueClient queueClient,
+        QueueClient poisonQueueClient,
+        Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>> processMessageCallback,
+        Func<Exception, Task> processErrorCallback)
+    {
+        _queueClient = queueClient;
+        _poisonQueueClient = poisonQueueClient;
+        _processMessageCallback = processMessageCallback ?? throw new ArgumentNullException(nameof(processMessageCallback));
+        _processErrorCallback = processErrorCallback ?? throw new ArgumentNullException(nameof(processErrorCallback));
+        //TODO: boundedCapacity to config
+        _blockingQueue = new BlockingCollection<QueueMessage>(10);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public async Task StartProcessingAsync(CancellationToken cancellationToken)
+    {
+        _emitterTask = StartEmittingMessages(cancellationToken);
+        _receiverTask = StartReceivingAsync(cancellationToken);
+    }
+
+    private Task StartReceivingAsync(CancellationToken cancellationToken)
+    {
+        var receiverTask = Task.Run(async () =>
+        {
+            while (!cancellationToken.IsCancellationRequested && !_stopRequested)
+            {
+                await GetNextMessage(cancellationToken);
+            }
+
+            _blockingQueue.CompleteAdding();
+        }, cancellationToken);
+        return receiverTask;
+    }
+
+    private async Task GetNextMessage(CancellationToken cancellationToken)
+    {
+        Response<QueueMessage>? queueMessage = null;
+        try
+        {
+            queueMessage = await _queueClient.ReceiveMessageAsync(cancellationToken: cancellationToken);
+
+            if (queueMessage?.Value == null)
+            {
+                //TODO: implement configurable delay
+                await Task.Delay(1000, cancellationToken);
+                return;
+            }
+
+            _blockingQueue.Add(queueMessage, cancellationToken);
+        }
+        catch (Exception e)
+        {
+            await ProcessExceptionAsync(e, queueMessage?.Value, cancellationToken);
+            
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                //TODO: implement configurable delay
+                await Task.Delay(1000, cancellationToken);
+            }
+        }
+    }
+
+    private Task StartEmittingMessages(CancellationToken cancellationToken)
+    {
+        var emitterTask = Task.Run(async () =>
+        {
+            while (!_blockingQueue.IsCompleted)
+            {
+                QueueMessage? message = null;
+                try
+                {
+                    message = _blockingQueue.Take();
+                }
+                catch (InvalidOperationException)
+                {
+                    // Queue is empty and was marked as complete
+                    // Nothing to do, while will terminate
+                }
+                catch (OperationCanceledException)
+                {
+                    // Queue is empty and was marked as complete
+                    // Nothing to do, while will terminate
+                }
+
+                if (message != null)
+                {
+                    await TryProcessMessageAsync(message, cancellationToken);
+                }
+            }
+        }, cancellationToken);
+
+        return emitterTask;
+    }
+
+    private async Task TryProcessMessageAsync(QueueMessage message, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _processMessageCallback(new TaskRequest(), cancellationToken);
+            if (result.Succeeded)
+            {
+                await _queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt, cancellationToken);
+            }
+            else
+            {
+                await ProcessExceptionAsync(result.Exception!, message, cancellationToken);
+            }
+        }
+        catch (Exception e)
+        {
+            await ProcessExceptionAsync(e, message, cancellationToken);
+        }
+    }
+
+    private async Task ProcessExceptionAsync(Exception exception, QueueMessage? message, CancellationToken cancellationToken)
+    {
+        await _processErrorCallback(exception);
+        if (message is { DequeueCount: >= 10 })
+        {
+            await _poisonQueueClient.SendMessageAsync(message.Body, cancellationToken: cancellationToken);
+            await _queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt, cancellationToken);
+        }
+    }
+
+    public Task StopProcessingAsync(CancellationToken cancellationToken = default)
+    {
+        _stopRequested = true;
+        return Task.WhenAll(_receiverTask ?? Task.CompletedTask, _emitterTask ?? Task.CompletedTask);
+    }
+}
+
+internal class MessageProcessorResult
+{
+    public bool Succeeded { get; set; }
+    public Exception? Exception { get; set; }
+}

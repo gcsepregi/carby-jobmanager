@@ -4,7 +4,7 @@ using Microsoft.Azure.WebJobs.Host.Bindings;
 
 namespace Carby.JobManager.Functions.SimpleTask;
 
-public class SimpleTaskTriggerBindingContext
+internal sealed class SimpleTaskTriggerBindingContext
 {
     public IValueBinder? SimpleTaskReturnValueHandler { get; set; }
     public IMessagingService? TriggerSource { get; set; }

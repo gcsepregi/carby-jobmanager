@@ -7,7 +7,7 @@ using Microsoft.Azure.WebJobs.Host.Triggers;
 
 namespace Carby.JobManager.Functions.SimpleTask;
 
-public class SimpleTaskExtensionConfigProvider : IExtensionConfigProvider
+internal class SimpleTaskExtensionConfigProvider : IExtensionConfigProvider
 {
     private readonly IMessagingService _messagingServiceBus;
 

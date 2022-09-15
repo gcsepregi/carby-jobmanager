@@ -10,42 +10,42 @@ internal sealed class ServiceBusMessagingService : IMessagingService
     private readonly INamedJobCollection _namedJobCollection;
     private static readonly MemoryCache Cache = MemoryCache.Default;
     
-    private static string GetServiceBusConnection(string? jobName)
-        => Environment.GetEnvironmentVariable($"{jobName ?? ICommonServices.DefaultJobName}:ServiceBusConnection")!;
+    private static string GetServiceBusConnection()
+        => Environment.GetEnvironmentVariable($"CarbyJobManager:ServiceBusConnection")!;
 
     public ServiceBusMessagingService(INamedJobCollection namedJobCollection)
     {
         _namedJobCollection = namedJobCollection;
     }
     
-    public async Task<IMessageProcessor> CreateProcessorAsync(string? jobName, string queueName, Func<ProcessMessageEventArgs, Task> processMessageCallback, Func<ProcessErrorEventArgs, Task> processErrorCallback)
+    public async Task<IMessageProcessor> CreateProcessorAsync(string? jobName, string queueName, Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>> processMessageCallback, Func<Exception, Task> processErrorCallback)
     {
-        await EnsureQueueExistsAsync(jobName, queueName);
-        var processor = CreateServiceBusClient(jobName).CreateProcessor(queueName);
-        processor.ProcessErrorAsync += processErrorCallback;
-        processor.ProcessMessageAsync += processMessageCallback;
+        await EnsureQueueExistsAsync(queueName);
+        var processor = CreateServiceBusClient().CreateProcessor(queueName);
+        processor.ProcessErrorAsync += (message) => processErrorCallback(message.Exception);
+        processor.ProcessMessageAsync += (message) => processMessageCallback(new TaskRequest(), message.CancellationToken);
         return new ServiceBusMessageProcessorWrapper(processor);
     }
 
     public async Task TriggerJobAsync(string? jobName)
     {
         var jobDescriptor = _namedJobCollection[jobName ?? ICommonServices.DefaultJobName];
-        var messageSender = CreateServiceBusClient(jobName).CreateSender(jobDescriptor.StartTask);
+        var messageSender = CreateServiceBusClient().CreateSender(jobDescriptor.StartTask);
         await messageSender.SendMessageAsync(new ServiceBusMessage(JsonSerializer.Serialize(new TaskRequest())));
     }
 
-    private async Task EnsureQueueExistsAsync(string? jobName, string queueName)
+    private async Task EnsureQueueExistsAsync(string queueName)
     {
-        var administrationClient = CreateServiceBusAdministrationClient(jobName);
+        var administrationClient = CreateServiceBusAdministrationClient();
         if (!await administrationClient.QueueExistsAsync(queueName))
         {
             await administrationClient.CreateQueueAsync(queueName);
         }
     }
 
-    private ServiceBusClient CreateServiceBusClient(string? jobName)
+    private ServiceBusClient CreateServiceBusClient()
     {
-        var cacheItemKey = $"ServiceBusClient:{jobName ?? ICommonServices.DefaultJobName}";
+        var cacheItemKey = $"ServiceBusClient:{ICommonServices.DefaultJobName}";
         if (Cache.Contains(cacheItemKey))
         {
             return (ServiceBusClient)Cache.Get(cacheItemKey)!;
@@ -55,21 +55,21 @@ internal sealed class ServiceBusMessagingService : IMessagingService
         {
             TransportType = ServiceBusTransportType.AmqpWebSockets
         };
-        var connection = GetServiceBusConnection(jobName);
+        var connection = GetServiceBusConnection();
         var queueClient = new ServiceBusClient(connection, options);
 
         return (ServiceBusClient)Cache.AddOrGetExisting(cacheItemKey, queueClient, DateTimeOffset.MaxValue) ?? queueClient;
     }
     
-    private ServiceBusAdministrationClient CreateServiceBusAdministrationClient(string? jobName)
+    private ServiceBusAdministrationClient CreateServiceBusAdministrationClient()
     {
-        var cacheItemKey = $"ServiceBusAdministrationClient:{jobName ?? ICommonServices.DefaultJobName}";
+        var cacheItemKey = $"ServiceBusAdministrationClient:{ICommonServices.DefaultJobName}";
         if (Cache.Contains(cacheItemKey))
         {
             return (ServiceBusAdministrationClient)Cache.Get(cacheItemKey)!;
         }
 
-        var connection = GetServiceBusConnection(jobName);
+        var connection = GetServiceBusConnection();
         var queueClient = new ServiceBusAdministrationClient(connection);
 
         return (ServiceBusAdministrationClient)Cache.AddOrGetExisting(cacheItemKey, queueClient, DateTimeOffset.MaxValue) ?? queueClient;

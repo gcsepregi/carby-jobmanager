@@ -5,7 +5,7 @@ using Microsoft.Azure.WebJobs.Host.Triggers;
 
 namespace Carby.JobManager.Functions.SimpleTask;
 
-public class SimpleTaskTriggerBinding : ITriggerBinding
+internal sealed class SimpleTaskTriggerBinding : ITriggerBinding
 {
     private readonly SimpleTaskTriggerBindingContext _context;
     private readonly IReadOnlyDictionary<string, Type> _bindingDataContract;

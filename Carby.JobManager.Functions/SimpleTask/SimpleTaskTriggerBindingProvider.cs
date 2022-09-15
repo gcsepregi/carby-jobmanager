@@ -4,7 +4,7 @@ using Microsoft.Azure.WebJobs.Host.Triggers;
 
 namespace Carby.JobManager.Functions.SimpleTask;
 
-public class SimpleTaskTriggerBindingProvider : ITriggerBindingProvider
+internal sealed class SimpleTaskTriggerBindingProvider : ITriggerBindingProvider
 {
     private readonly SimpleTaskExtensionConfigProvider _configProvider;
 

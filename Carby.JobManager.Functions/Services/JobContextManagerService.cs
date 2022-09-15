@@ -4,11 +4,8 @@ using Carby.JobManager.Functions.JobModel;
 
 namespace Carby.JobManager.Functions.Services;
 
-internal sealed class JobContextManagerService : IJobContextManagerService
+internal sealed class JobContextManagerService : StorageManagerServiceBase, IJobContextManagerService
 {
-    private static string GetStorageConnection(string? jobName)
-        => Environment.GetEnvironmentVariable($"{jobName ?? ICommonServices.DefaultJobName}:StorageAccountConnection")!;
-
     public Task<IJobContext> ReadJobContextAsync(string? jobName)
     {
         throw new NotImplementedException();
@@ -16,7 +13,7 @@ internal sealed class JobContextManagerService : IJobContextManagerService
 
     public async Task PersistJobContextAsync(string? jobName, IJobContext jobContext)
     {
-        var tableClient = new TableClient(GetStorageConnection(jobName), "jobcontexts");
+        var tableClient = new TableClient(GetStorageConnection(), "jobcontexts");
         await tableClient.CreateIfNotExistsAsync();
         var tableEntity = new TableEntity(jobName, jobContext.JobId);
         foreach (var (key, value) in jobContext)
