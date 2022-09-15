@@ -8,7 +8,7 @@ internal sealed class SimpleTaskListener : IListener
 {
     private readonly ListenerFactoryContext _context;
     private readonly SimpleTaskTriggerBindingContext _triggerBindingContext;
-    private IMessageProcessor? _serviceBusProcessor;
+    private IMessageProcessor? _messageProcessor;
 
     public SimpleTaskListener(ListenerFactoryContext context, SimpleTaskTriggerBindingContext triggerBindingContext)
     {
@@ -18,26 +18,30 @@ internal sealed class SimpleTaskListener : IListener
 
     public void Dispose()
     {
+        if (_messageProcessor != null)
+        {
+            Task.Run(async () => await _messageProcessor.DisposeAsync());
+        }
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         if (_triggerBindingContext.TriggerSource != null)
         {
-            _serviceBusProcessor = await _triggerBindingContext.TriggerSource.CreateProcessorAsync(
+            _messageProcessor = await _triggerBindingContext.TriggerSource.CreateProcessorAsync(
                 _triggerBindingContext.Attribute!.JobName,
                 _triggerBindingContext.Attribute!.TaskName,
                 ProcessMessageAsync, 
                 ProcessErrorAsync);
-            await _serviceBusProcessor.StartProcessingAsync(cancellationToken);
+            await _messageProcessor.StartProcessingAsync(cancellationToken);
         }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (_serviceBusProcessor != null)
+        if (_messageProcessor != null)
         {
-            await _serviceBusProcessor.StopProcessingAsync(cancellationToken);
+            await _messageProcessor.StopProcessingAsync(cancellationToken);
         }
     }
 
@@ -45,9 +49,9 @@ internal sealed class SimpleTaskListener : IListener
     {
         Task.Run(async () =>
         {
-            if (_serviceBusProcessor != null)
+            if (_messageProcessor != null)
             {
-                await _serviceBusProcessor.StopProcessingAsync();
+                await _messageProcessor.StopProcessingAsync();
             }
         });
     }
