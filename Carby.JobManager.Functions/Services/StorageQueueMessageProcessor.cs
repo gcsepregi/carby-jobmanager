@@ -10,26 +10,23 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
     private readonly QueueClient _queueClient;
     private readonly QueueClient _poisonQueueClient;
     private readonly BlockingCollection<QueueMessage> _blockingQueue;
-    private readonly Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>> _processMessageCallback;
-    private readonly Func<Exception, Task<bool>> _processErrorCallback;
     private readonly TimeSpan _messageVisibilityTimeout;
     private readonly int _messageRetryCount;
     private bool _stopRequested;
     private Task? _emitterTask;
     private Task? _receiverTask;
 
+    public event Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>>? OnMessage;
+    public event Func<Exception, Task<bool>>? OnError;
+    
     public StorageQueueMessageProcessor(QueueClient queueClient,
         QueueClient poisonQueueClient,
-        Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>> processMessageCallback,
-        Func<Exception, Task<bool>> processErrorCallback,
         TimeSpan messageVisibilityTimeout,
         int parallelMessageCount,
         int messageRetryCount)
     {
         _queueClient = queueClient;
         _poisonQueueClient = poisonQueueClient;
-        _processMessageCallback = processMessageCallback ?? throw new ArgumentNullException(nameof(processMessageCallback));
-        _processErrorCallback = processErrorCallback ?? throw new ArgumentNullException(nameof(processErrorCallback));
         _messageVisibilityTimeout = messageVisibilityTimeout;
         _messageRetryCount = messageRetryCount;
         _blockingQueue = new BlockingCollection<QueueMessage>(parallelMessageCount);
@@ -42,6 +39,10 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
 
     public Task StartProcessingAsync(CancellationToken cancellationToken)
     {
+        if (OnMessage == null)
+        {
+            throw new InvalidOperationException("Cannot start processing as no message handler had been provided");
+        }
         _emitterTask = StartEmittingMessages(cancellationToken);
         _receiverTask = StartReceivingAsync(cancellationToken);
         return Task.CompletedTask;
@@ -125,7 +126,7 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
     {
         try
         {
-            var result = await _processMessageCallback(new TaskRequest(), cancellationToken);
+            var result = await OnMessage!(new TaskRequest(), cancellationToken);
             if (result.Succeeded)
             {
                 await _queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt, cancellationToken);
@@ -148,7 +149,7 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
             throw new ArgumentNullException(nameof(message));
         }
         
-        var isFatalError = await _processErrorCallback(exception);
+        var isFatalError = OnError != null && await OnError(exception);
         
         if (isFatalError || message.DequeueCount >= _messageRetryCount)
         {

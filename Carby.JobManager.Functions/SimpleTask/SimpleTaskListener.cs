@@ -28,11 +28,9 @@ internal sealed class SimpleTaskListener : IListener
     {
         if (_triggerBindingContext.TriggerSource != null)
         {
-            _messageProcessor = await _triggerBindingContext.TriggerSource.CreateProcessorAsync(
-                _triggerBindingContext.Attribute!.JobName,
-                _triggerBindingContext.Attribute!.TaskName,
-                ProcessMessageAsync, 
-                ProcessErrorAsync);
+            _messageProcessor = await _triggerBindingContext.TriggerSource.CreateProcessorAsync(_triggerBindingContext.Attribute!.TaskName);
+            _messageProcessor.OnMessage += ProcessMessageAsync;
+            _messageProcessor.OnError += ProcessErrorAsync;
             await _messageProcessor.StartProcessingAsync(cancellationToken);
         }
     }
@@ -66,7 +64,7 @@ internal sealed class SimpleTaskListener : IListener
     {
         var result = await _context.Executor.TryExecuteAsync(new TriggeredFunctionData
         {
-            TriggerValue = new TaskRequest()
+            TriggerValue = arg
         }, CancellationToken.None);
 
         return new MessageProcessorResult

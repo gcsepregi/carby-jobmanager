@@ -12,11 +12,7 @@ internal sealed class StorageQueueMessagingService : StorageManagerServiceBase, 
         _namedJobCollection = namedJobCollection;
     }
     
-    public async Task<IMessageProcessor> CreateProcessorAsync(string? jobName, 
-        string queueName, 
-        Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>> processMessageCallback, 
-        Func<Exception, Task<bool>> processErrorCallback
-        )
+    public async Task<IMessageProcessor> CreateProcessorAsync(string queueName)
     {
         var queueClient = new QueueClient(GetStorageConnection(), queueName.ToLowerInvariant());
         var poisonQueueClient = new QueueClient(GetStorageConnection(), $"{queueName.ToLowerInvariant()}poisoned");
@@ -24,8 +20,6 @@ internal sealed class StorageQueueMessagingService : StorageManagerServiceBase, 
         await poisonQueueClient.CreateIfNotExistsAsync();
         return new StorageQueueMessageProcessor(queueClient, 
             poisonQueueClient, 
-            processMessageCallback, 
-            processErrorCallback,
             GetMessageVisibilityTimeout(queueName),
             GetParallelMessageCount(queueName),
             GetMessageRetryCount(queueName)

@@ -4,12 +4,7 @@ namespace Carby.JobManager.Functions.Services;
 
 internal interface IMessagingService
 {
-    public Task<IMessageProcessor> CreateProcessorAsync(
-        string? jobName,
-        string queueName,
-        Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>> processMessageCallback,
-        Func<Exception, Task<bool>> processErrorCallback
-        );
+    public Task<IMessageProcessor> CreateProcessorAsync(string queueName);
 
     Task TriggerJobAsync(string? jobName);
 }
