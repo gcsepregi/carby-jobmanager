@@ -8,7 +8,7 @@ internal interface IMessagingService
         string? jobName,
         string queueName,
         Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>> processMessageCallback,
-        Func<Exception, Task> processErrorCallback
+        Func<Exception, Task<bool>> processErrorCallback
         );
 
     Task TriggerJobAsync(string? jobName);

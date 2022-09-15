@@ -11,7 +11,9 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
     private readonly QueueClient _poisonQueueClient;
     private readonly BlockingCollection<QueueMessage> _blockingQueue;
     private readonly Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>> _processMessageCallback;
-    private readonly Func<Exception, Task> _processErrorCallback;
+    private readonly Func<Exception, Task<bool>> _processErrorCallback;
+    private readonly TimeSpan _messageVisibilityTimeout;
+    private readonly int _messageRetryCount;
     private bool _stopRequested;
     private Task? _emitterTask;
     private Task? _receiverTask;
@@ -19,14 +21,18 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
     public StorageQueueMessageProcessor(QueueClient queueClient,
         QueueClient poisonQueueClient,
         Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>> processMessageCallback,
-        Func<Exception, Task> processErrorCallback)
+        Func<Exception, Task<bool>> processErrorCallback,
+        TimeSpan messageVisibilityTimeout,
+        int parallelMessageCount,
+        int messageRetryCount)
     {
         _queueClient = queueClient;
         _poisonQueueClient = poisonQueueClient;
         _processMessageCallback = processMessageCallback ?? throw new ArgumentNullException(nameof(processMessageCallback));
         _processErrorCallback = processErrorCallback ?? throw new ArgumentNullException(nameof(processErrorCallback));
-        //TODO: boundedCapacity to config
-        _blockingQueue = new BlockingCollection<QueueMessage>(10);
+        _messageVisibilityTimeout = messageVisibilityTimeout;
+        _messageRetryCount = messageRetryCount;
+        _blockingQueue = new BlockingCollection<QueueMessage>(parallelMessageCount);
     }
 
     public ValueTask DisposeAsync()
@@ -34,10 +40,11 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
         return ValueTask.CompletedTask;
     }
 
-    public async Task StartProcessingAsync(CancellationToken cancellationToken)
+    public Task StartProcessingAsync(CancellationToken cancellationToken)
     {
         _emitterTask = StartEmittingMessages(cancellationToken);
         _receiverTask = StartReceivingAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
     private Task StartReceivingAsync(CancellationToken cancellationToken)
@@ -59,7 +66,7 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
         Response<QueueMessage>? queueMessage = null;
         try
         {
-            queueMessage = await _queueClient.ReceiveMessageAsync(cancellationToken: cancellationToken);
+            queueMessage = await _queueClient.ReceiveMessageAsync(_messageVisibilityTimeout, cancellationToken: cancellationToken);
 
             if (queueMessage?.Value == null)
             {
@@ -136,8 +143,14 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
 
     private async Task ProcessExceptionAsync(Exception exception, QueueMessage? message, CancellationToken cancellationToken)
     {
-        await _processErrorCallback(exception);
-        if (message is { DequeueCount: >= 10 })
+        if (message == null)
+        {
+            throw new ArgumentNullException(nameof(message));
+        }
+        
+        var isFatalError = await _processErrorCallback(exception);
+        
+        if (isFatalError || message.DequeueCount >= _messageRetryCount)
         {
             await _poisonQueueClient.SendMessageAsync(message.Body, cancellationToken: cancellationToken);
             await _queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt, cancellationToken);

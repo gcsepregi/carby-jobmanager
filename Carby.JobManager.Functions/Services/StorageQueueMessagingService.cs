@@ -12,13 +12,24 @@ internal sealed class StorageQueueMessagingService : StorageManagerServiceBase, 
         _namedJobCollection = namedJobCollection;
     }
     
-    public async Task<IMessageProcessor> CreateProcessorAsync(string? jobName, string queueName, Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>> processMessageCallback, Func<Exception, Task> processErrorCallback)
+    public async Task<IMessageProcessor> CreateProcessorAsync(string? jobName, 
+        string queueName, 
+        Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>> processMessageCallback, 
+        Func<Exception, Task<bool>> processErrorCallback
+        )
     {
-        var queueClient = new QueueClient(GetStorageConnection(), queueName);
-        var poisonQueueClient = new QueueClient(GetStorageConnection(), $"{queueName}poisoned");
+        var queueClient = new QueueClient(GetStorageConnection(), queueName.ToLowerInvariant());
+        var poisonQueueClient = new QueueClient(GetStorageConnection(), $"{queueName.ToLowerInvariant()}poisoned");
         await queueClient.CreateIfNotExistsAsync();
         await poisonQueueClient.CreateIfNotExistsAsync();
-        return new StorageQueueMessageProcessor(queueClient, poisonQueueClient, processMessageCallback, processErrorCallback);
+        return new StorageQueueMessageProcessor(queueClient, 
+            poisonQueueClient, 
+            processMessageCallback, 
+            processErrorCallback,
+            GetMessageVisibilityTimeout(queueName),
+            GetParallelMessageCount(queueName),
+            GetMessageRetryCount(queueName)
+            );
     }
 
     public async Task TriggerJobAsync(string? jobName)

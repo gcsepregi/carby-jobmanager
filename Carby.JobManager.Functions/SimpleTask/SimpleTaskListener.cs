@@ -26,7 +26,7 @@ internal sealed class SimpleTaskListener : IListener
         {
             _serviceBusProcessor = await _triggerBindingContext.TriggerSource.CreateProcessorAsync(
                 _triggerBindingContext.Attribute!.JobName,
-                _triggerBindingContext.Attribute!.TaskName.ToLowerInvariant(),
+                _triggerBindingContext.Attribute!.TaskName,
                 ProcessMessageAsync, 
                 ProcessErrorAsync);
             await _serviceBusProcessor.StartProcessingAsync(cancellationToken);
@@ -52,9 +52,10 @@ internal sealed class SimpleTaskListener : IListener
         });
     }
 
-    private async Task ProcessErrorAsync(Exception exception)
+    private async Task<bool> ProcessErrorAsync(Exception exception)
     {
-        await Console.Error.WriteLineAsync(exception.ToString());
+        await Console.Out.WriteLineAsync($"ProcessErrorAsync: {exception.Message}");
+        return false;
     }
 
     private async Task<MessageProcessorResult> ProcessMessageAsync(TaskRequest arg, CancellationToken cancellationToken)
