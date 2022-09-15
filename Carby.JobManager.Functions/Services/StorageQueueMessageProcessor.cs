@@ -11,6 +11,7 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
     private readonly QueueClient _poisonQueueClient;
     private readonly BlockingCollection<QueueMessage> _blockingQueue;
     private readonly TimeSpan _messageVisibilityTimeout;
+    private readonly int _parallelMessageCount;
     private readonly int _messageRetryCount;
     private bool _stopRequested;
     private Task? _emitterTask;
@@ -28,6 +29,7 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
         _queueClient = queueClient;
         _poisonQueueClient = poisonQueueClient;
         _messageVisibilityTimeout = messageVisibilityTimeout;
+        _parallelMessageCount = parallelMessageCount;
         _messageRetryCount = messageRetryCount;
         _blockingQueue = new BlockingCollection<QueueMessage>(parallelMessageCount);
     }
@@ -94,8 +96,15 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
     {
         var emitterTask = Task.Run(async () =>
         {
+            var inFlight = new HashSet<Task>();
             while (!_blockingQueue.IsCompleted)
             {
+                if (inFlight.Count >= _parallelMessageCount)
+                {
+                    var finishedItem = await Task.WhenAny(inFlight);
+                    inFlight.Remove(finishedItem);
+                }
+                
                 QueueMessage? message = null;
                 try
                 {
@@ -113,8 +122,8 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
                 }
 
                 if (message != null)
-                {
-                    await TryProcessMessageAsync(message, cancellationToken);
+                { 
+                    inFlight.Add(TryProcessMessageAsync(message, cancellationToken));
                 }
             }
         }, cancellationToken);
