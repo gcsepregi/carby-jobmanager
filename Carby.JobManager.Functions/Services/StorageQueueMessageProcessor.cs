@@ -126,7 +126,15 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
     {
         try
         {
-            var result = await OnMessage!(new TaskRequest(), cancellationToken);
+            var result = await OnMessage!(new TaskRequest
+            {
+                RequestId = message.MessageId,
+                Message = message.Body,
+                DequeueCount = message.DequeueCount,
+                InsertedOn = message.InsertedOn,
+                ExpiresOn = message.ExpiresOn,
+            }, cancellationToken);
+            
             if (result.Succeeded)
             {
                 await _queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt, cancellationToken);
