@@ -9,11 +9,11 @@ namespace Carby.JobManager.Functions.SimpleTask;
 
 internal class SimpleTaskExtensionConfigProvider : IExtensionConfigProvider
 {
-    private readonly IMessagingService _messagingServiceBus;
+    private readonly IMessagingService _messagingService;
 
     public SimpleTaskExtensionConfigProvider(IMessagingService messagingProvider)
     {
-        _messagingServiceBus = messagingProvider;
+        _messagingService = messagingProvider;
     }
 
     public void Initialize(ExtensionConfigContext context)
@@ -26,7 +26,7 @@ internal class SimpleTaskExtensionConfigProvider : IExtensionConfigProvider
     {
         return new SimpleTaskTriggerBindingContext
         {
-            TriggerSource = _messagingServiceBus,
+            TriggerSource = _messagingService,
             SimpleTaskReturnValueHandler = CreateReturnValueHandler(),
             Attribute = context.Parameter.GetCustomAttribute<SimpleTaskTriggerAttribute>()
         };
