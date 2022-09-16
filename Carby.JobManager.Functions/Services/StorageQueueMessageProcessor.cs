@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Azure;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
@@ -9,12 +8,10 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
 {
     private readonly QueueClient _queueClient;
     private readonly QueueClient _poisonQueueClient;
-    private readonly BlockingCollection<QueueMessage> _blockingQueue;
     private readonly TimeSpan _messageVisibilityTimeout;
     private readonly int _parallelMessageCount;
     private readonly int _messageRetryCount;
     private bool _stopRequested;
-    private Task? _emitterTask;
     private Task? _receiverTask;
 
     public event Func<TaskRequest, CancellationToken, Task<MessageProcessorResult>>? OnMessage;
@@ -31,7 +28,6 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
         _messageVisibilityTimeout = messageVisibilityTimeout;
         _parallelMessageCount = parallelMessageCount;
         _messageRetryCount = messageRetryCount;
-        _blockingQueue = new BlockingCollection<QueueMessage>(parallelMessageCount);
     }
 
     public ValueTask DisposeAsync()
@@ -45,26 +41,34 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
         {
             throw new InvalidOperationException("Cannot start processing as no message handler had been provided");
         }
-        _emitterTask = StartEmittingMessages(cancellationToken);
         _receiverTask = StartReceivingAsync(cancellationToken);
         return Task.CompletedTask;
     }
 
     private Task StartReceivingAsync(CancellationToken cancellationToken)
     {
-        var receiverTask = Task.Run(async () =>
+        return Task.Run(async () =>
         {
+            var inFlight = new HashSet<Task>();
             while (!cancellationToken.IsCancellationRequested && !_stopRequested)
             {
-                await GetNextMessage(cancellationToken);
-            }
+                if (inFlight.Count >= _parallelMessageCount)
+                {
+                    var finishedItem = await Task.WhenAny(inFlight);
+                    inFlight.Remove(finishedItem);
+                }
 
-            _blockingQueue.CompleteAdding();
+                var message = await GetNextMessage(cancellationToken);
+                
+                if (message != null)
+                { 
+                    inFlight.Add(TryProcessMessageAsync(message, cancellationToken));
+                }
+            }
         }, cancellationToken);
-        return receiverTask;
     }
 
-    private async Task GetNextMessage(CancellationToken cancellationToken)
+    private async Task<QueueMessage?> GetNextMessage(CancellationToken cancellationToken)
     {
         Response<QueueMessage>? queueMessage = null;
         try
@@ -75,10 +79,10 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
             {
                 //TODO: implement configurable delay
                 await Task.Delay(1000, cancellationToken);
-                return;
+                return null;
             }
 
-            _blockingQueue.Add(queueMessage, cancellationToken);
+            return queueMessage.Value;
         }
         catch (Exception e)
         {
@@ -89,46 +93,9 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
                 //TODO: implement configurable delay
                 await Task.Delay(1000, cancellationToken);
             }
+
+            return null;
         }
-    }
-
-    private Task StartEmittingMessages(CancellationToken cancellationToken)
-    {
-        var emitterTask = Task.Run(async () =>
-        {
-            var inFlight = new HashSet<Task>();
-            while (!_blockingQueue.IsCompleted)
-            {
-                if (inFlight.Count >= _parallelMessageCount)
-                {
-                    var finishedItem = await Task.WhenAny(inFlight);
-                    inFlight.Remove(finishedItem);
-                }
-                
-                QueueMessage? message = null;
-                try
-                {
-                    message = _blockingQueue.Take();
-                }
-                catch (InvalidOperationException)
-                {
-                    // Queue is empty and was marked as complete
-                    // Nothing to do, while will terminate
-                }
-                catch (OperationCanceledException)
-                {
-                    // Queue is empty and was marked as complete
-                    // Nothing to do, while will terminate
-                }
-
-                if (message != null)
-                { 
-                    inFlight.Add(TryProcessMessageAsync(message, cancellationToken));
-                }
-            }
-        }, cancellationToken);
-
-        return emitterTask;
     }
 
     private async Task TryProcessMessageAsync(QueueMessage message, CancellationToken cancellationToken)
@@ -178,7 +145,7 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
     public Task StopProcessingAsync(CancellationToken cancellationToken = default)
     {
         _stopRequested = true;
-        return Task.WhenAll(_receiverTask ?? Task.CompletedTask, _emitterTask ?? Task.CompletedTask);
+        return _receiverTask ?? Task.CompletedTask;
     }
 }
 

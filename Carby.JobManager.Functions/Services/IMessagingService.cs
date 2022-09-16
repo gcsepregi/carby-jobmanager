@@ -1,5 +1,3 @@
-using Azure.Messaging.ServiceBus;
-
 namespace Carby.JobManager.Functions.Services;
 
 internal interface IMessagingService
