@@ -55,7 +55,10 @@ internal sealed class SimpleTaskTriggerBinding : ITriggerBinding
 
         foreach (var otherParam in method.GetParameters())
         {
-            data[otherParam.Name!] = JsonSerializer.Deserialize(JsonSerializer.Serialize(jobContext[otherParam.Name!]), otherParam.ParameterType)!;
+            if (jobContext.ContainsKey(otherParam.Name!))
+            {
+                data[otherParam.Name!] = JsonSerializer.Deserialize(JsonSerializer.Serialize(jobContext[otherParam.Name!]), otherParam.ParameterType)!;
+            }
         }
         
         return data;

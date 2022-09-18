@@ -12,7 +12,13 @@ internal sealed class JobContextManagerService : StorageManagerServiceBase, IJob
     {
         var tableClient = new TableClient(GetStorageConnection(), JobContextsTableName);
         var tableEntity = await tableClient.GetEntityAsync<TableEntity>(jobName, jobId);
-        return new JobContext(jobName!, tableEntity.Value);
+
+        var jobContext = new JobContext(jobName!);
+        foreach (var (key, value) in tableEntity.Value)
+        {
+            jobContext[key] = value;
+        }
+        return jobContext;
     }
 
     public async Task PersistJobContextAsync(string? jobName, IJobContext jobContext)

@@ -9,9 +9,9 @@ internal sealed class JobContext : IJobContext
     public string PartitionKey { get; set; }
     public ICollection<object> Values => _dictionaryImplementation.Values;
     
-    public JobContext(string jobName, IDictionary<string, object>? dictObject)
+    public JobContext(string jobName, IDictionary<string, object>? dictObject = null)
     {
-        _dictionaryImplementation = dictObject ?? new Dictionary<string, object>();
+        _dictionaryImplementation = dictObject ?? new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         JobId = Guid.NewGuid().ToString("D");
         PartitionKey = jobName;
     }
