@@ -35,4 +35,22 @@ internal sealed class JobManagerClient : IJobManagerClient
         activity.StopActivity();
     }
 
+    public Activity CreateActivity(string operationName)
+    {
+        var activity = operationName.CreateActivity(ActivityKind.Client);
+        activity.AddBaggage(ICommonServices.CurrentJobNameKey, operationName);
+        activity.AddBaggage(ICommonServices.InternalJobIdKey, Guid.NewGuid().ToString("D"));
+        activity.AddTag(ICommonServices.TaskInstanceIdKey, ActivityTraceId.CreateRandom().ToHexString());
+        return activity;
+    }
+
+    public void StartActivity(Activity activity)
+    {
+        activity.StartActivity();
+    }
+
+    public void StopActivity(Activity activity)
+    {
+        activity.StopActivity();
+    }
 }
