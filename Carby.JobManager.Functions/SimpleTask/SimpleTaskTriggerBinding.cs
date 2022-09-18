@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using System.Text.Json;
+using Carby.JobManager.Functions.Services;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 using Microsoft.Azure.WebJobs.Host.Listeners;
 using Microsoft.Azure.WebJobs.Host.Protocols;
@@ -8,20 +11,19 @@ namespace Carby.JobManager.Functions.SimpleTask;
 internal sealed class SimpleTaskTriggerBinding : ITriggerBinding
 {
     private readonly SimpleTaskTriggerBindingContext _context;
-    private readonly IReadOnlyDictionary<string, Type> _bindingDataContract;
 
     public SimpleTaskTriggerBinding(SimpleTaskTriggerBindingContext context)
     {
         _context = context;
-        _bindingDataContract = GetBindingDataContract();
+        BindingDataContract = GetBindingDataContract();
     }
 
-    public Task<ITriggerData> BindAsync(object value, ValueBindingContext context)
+    public async Task<ITriggerData> BindAsync(object value, ValueBindingContext context)
     {
-        return Task.FromResult<ITriggerData>(new TriggerData(new SimpleTaskValueProvider(value), GetBindingData())
+        return new TriggerData(new SimpleTaskValueProvider(value), await GetBindingDataAsync())
         {
             ReturnValueProvider = _context.SimpleTaskReturnValueHandler
-        });
+        };
     }
 
     public Task<IListener> CreateListenerAsync(ListenerFactoryContext context)
@@ -39,19 +41,44 @@ internal sealed class SimpleTaskTriggerBinding : ITriggerBinding
     }
 
     public Type TriggerValueType => typeof(object);
-    public IReadOnlyDictionary<string, Type> BindingDataContract => _bindingDataContract;
-    
-    private IReadOnlyDictionary<string, object> GetBindingData()
+    public IReadOnlyDictionary<string, Type> BindingDataContract { get; }
+
+    private async Task<IReadOnlyDictionary<string, object>> GetBindingDataAsync()
     {
-        return new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        var data = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+
+        var method = _context.Method!;
+
+        var jobName = Activity.Current?.GetBaggageItem(ICommonServices.CurrentJobNameKey);
+        var jobId = Activity.Current?.GetBaggageItem(ICommonServices.InternalJobIdKey);
+        var jobContext = await _context.JobContextManager!.ReadJobContextAsync(jobName, jobId);
+
+        foreach (var otherParam in method.GetParameters())
+        {
+            data[otherParam.Name!] = JsonSerializer.Deserialize(JsonSerializer.Serialize(jobContext[otherParam.Name!]), otherParam.ParameterType)!;
+        }
+        
+        return data;
     }
     
     private IReadOnlyDictionary<string, Type> GetBindingDataContract()
     {
-        return new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase)
+        var contract = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase)
         {
             { "$return", typeof(object).MakeByRefType() }
         };
+
+        var parameter = _context.Parameter!;
+        var method = _context.Method!;
+        
+        contract[parameter.Name!] = parameter.ParameterType;
+
+        foreach (var otherParam in method.GetParameters())
+        {
+            contract[otherParam.Name!] = otherParam.ParameterType;
+        }
+
+        return contract;
     }
 
 }

@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using Azure;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
+using Carby.JobManager.Functions.Tracing;
 
 namespace Carby.JobManager.Functions.Services;
 
@@ -78,7 +80,7 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
             if (queueMessage?.Value == null)
             {
                 //TODO: implement configurable delay
-                await Task.Delay(1000, cancellationToken);
+                await Task.Delay(100, cancellationToken);
                 return null;
             }
 
@@ -91,7 +93,7 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
             if (!cancellationToken.IsCancellationRequested)
             {
                 //TODO: implement configurable delay
-                await Task.Delay(1000, cancellationToken);
+                await Task.Delay(100, cancellationToken);
             }
 
             return null;
@@ -100,17 +102,19 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
 
     private async Task TryProcessMessageAsync(QueueMessage message, CancellationToken cancellationToken)
     {
+        Activity? activity = null;
         try
         {
-            var result = await OnMessage!(new TaskRequest
-            {
-                RequestId = message.MessageId,
-                Message = message.Body,
-                DequeueCount = message.DequeueCount,
-                InsertedOn = message.InsertedOn,
-                ExpiresOn = message.ExpiresOn,
-            }, cancellationToken);
-            
+            var envelope = message.Body.ToObjectFromJson<TaskRequestEnvelope>();
+            activity = _queueClient.Name.CreateActivity(ActivityKind.Client);
+            activity.FillActivityFromDistributedContext(envelope.Headers);
+            activity.AddTag(ICommonServices.TaskInstanceIdKey, envelope.Headers[ICommonServices.TaskInstanceIdKey]);
+            activity.AddTag(ICommonServices.CurrentTaskNameKey, envelope.Headers[ICommonServices.CurrentTaskNameKey]);
+            activity.OnActivityImport();
+            activity.StartActivity();
+
+            var result = await OnMessage!(new TaskRequest(), cancellationToken);
+
             if (result.Succeeded)
             {
                 await _queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt, cancellationToken);
@@ -123,6 +127,10 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
         catch (Exception e)
         {
             await ProcessExceptionAsync(e, message, cancellationToken);
+        }
+        finally
+        {
+            activity?.StopActivity();
         }
     }
 

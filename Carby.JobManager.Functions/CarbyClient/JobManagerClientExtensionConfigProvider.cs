@@ -12,7 +12,7 @@ internal sealed class JobManagerClientExtensionConfigProvider : IExtensionConfig
     public JobManagerClientExtensionConfigProvider(
         IMessagingService messagingService, 
         IJobContextManagerService jobContextManagerService
-        )
+    )
     {
         _messagingService = messagingService;
         _jobContextManagerService = jobContextManagerService;

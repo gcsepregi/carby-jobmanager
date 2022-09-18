@@ -1,6 +1,6 @@
 using System.Diagnostics;
-using Carby.JobManager.Functions.JobModel;
 using Carby.JobManager.Functions.Services;
+using Carby.JobManager.Functions.Tracing;
 
 namespace Carby.JobManager.Functions.CarbyClient;
 
@@ -22,13 +22,17 @@ internal sealed class JobManagerClient : IJobManagerClient
     {
         Console.WriteLine($"Starting job named {jobName}");
         var jobContext = await _jobContextManagerService.ConvertUserType(jobName, customJobProperties);
-        SetUpActivity<T>(jobContext);
+
+        var activity = jobName.CreateActivity(ActivityKind.Internal);
+        activity.AddBaggage(ICommonServices.InternalJobIdKey, jobContext.JobId);
+        activity.AddBaggage(ICommonServices.CurrentJobNameKey, jobName);
+        activity.AddTag(ICommonServices.TaskInstanceIdKey, ActivityTraceId.CreateRandom().ToHexString());
+        activity.StartActivity();
+
         await _jobContextManagerService.PersistJobContextAsync(jobName, jobContext);
         await _messagingService.TriggerJobAsync(jobName);
+        
+        activity.StopActivity();
     }
 
-    private static void SetUpActivity<T>(IJobContext jobContext)
-    {
-        Activity.Current?.AddBaggage("InternalJobId", jobContext.JobId);
-    }
 }

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Carby.JobManager.Functions.Services;
 using Microsoft.Azure.WebJobs.Host.Executors;
 using Microsoft.Azure.WebJobs.Host.Listeners;
@@ -66,6 +67,18 @@ internal sealed class SimpleTaskListener : IListener
         {
             TriggerValue = arg
         }, CancellationToken.None);
+
+        var jobName = Activity.Current?.GetBaggageItem(ICommonServices.CurrentJobNameKey) ?? throw new InvalidOperationException("Activity must already be started and baggage and tags filled");
+        var taskName = (string?)Activity.Current?.GetTagItem(ICommonServices.CurrentTaskNameKey) ?? throw new InvalidOperationException("Activity must already be started and baggage and tags filled");
+        
+        if (result.Succeeded)
+        {
+            await _triggerBindingContext.TriggerSource!.TriggerNextTaskAsync(jobName, taskName);
+        }
+        else
+        {
+            await _triggerBindingContext.TriggerSource!.TriggerFailureHandlerTaskAsync(jobName, taskName);
+        }
 
         return new MessageProcessorResult
         {

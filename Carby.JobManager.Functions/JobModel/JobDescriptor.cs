@@ -2,9 +2,10 @@ namespace Carby.JobManager.Functions.JobModel;
 
 internal sealed class JobDescriptor
 {
-    public string? StartTask { get; set; }
-    public string? EndTask { get; set; }
-    public string? HandleFailureTask { get; set; }
-    public string? CleanUpTask { get; set; }
-    public IDictionary<string, ICollection<TransitionDescriptor>>? Transitions { get; set; }
+    public string StartTask { get; set; } = null!;
+    public string EndTask { get; set; } = null!;
+    public string HandleFailureTask { get; set; } = null!;
+    public string CleanUpTask { get; set; } = null!;
+    public IDictionary<string, ICollection<TransitionDescriptor>> Transitions { get; set; } =
+        new Dictionary<string, ICollection<TransitionDescriptor>>();
 }

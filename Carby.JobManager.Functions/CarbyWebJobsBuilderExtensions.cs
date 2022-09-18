@@ -1,6 +1,8 @@
 using Carby.JobManager.Functions.CarbyClient;
 using Carby.JobManager.Functions.Services;
 using Carby.JobManager.Functions.SimpleTask;
+using Carby.JobManager.Functions.Tracing;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,10 +19,12 @@ public static class CarbyWebJobsBuilderExtensions
 
         builder.AddExtension<SimpleTaskExtensionConfigProvider>();
         builder.AddExtension<JobManagerClientExtensionConfigProvider>();
-        builder.Services.AddSingleton<ICommonServices, CommonServices>();
         builder.Services.AddSingleton<IMessagingService, StorageQueueMessagingService>();
         builder.Services.AddSingleton<INamedJobCollection, NamedJobCollection>();
         builder.Services.AddSingleton<IJobContextManagerService, JobContextManagerService>();
+        builder.Services.AddSingleton<IJobHistoryService, JobHistoryService>();
+        builder.Services.AddSingleton<ITelemetryModule, TelemetryModule>();
+
         return builder;
     }
 }

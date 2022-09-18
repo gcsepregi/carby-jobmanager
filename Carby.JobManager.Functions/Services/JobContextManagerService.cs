@@ -6,14 +6,18 @@ namespace Carby.JobManager.Functions.Services;
 
 internal sealed class JobContextManagerService : StorageManagerServiceBase, IJobContextManagerService
 {
-    public Task<IJobContext> ReadJobContextAsync(string? jobName)
+    private const string JobContextsTableName = "jobcontexts";
+
+    public async Task<IJobContext> ReadJobContextAsync(string? jobName, string? jobId)
     {
-        throw new NotImplementedException();
+        var tableClient = new TableClient(GetStorageConnection(), JobContextsTableName);
+        var tableEntity = await tableClient.GetEntityAsync<TableEntity>(jobName, jobId);
+        return new JobContext(jobName!, tableEntity.Value);
     }
 
     public async Task PersistJobContextAsync(string? jobName, IJobContext jobContext)
     {
-        var tableClient = new TableClient(GetStorageConnection(), "jobcontexts");
+        var tableClient = new TableClient(GetStorageConnection(), JobContextsTableName);
         await tableClient.CreateIfNotExistsAsync();
         var tableEntity = new TableEntity(jobName, jobContext.JobId);
         foreach (var (key, value) in jobContext)
