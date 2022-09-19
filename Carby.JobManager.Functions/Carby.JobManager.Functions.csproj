@@ -8,7 +8,9 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft.ApplicationInsights" Version="2.21.0" />
+      <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" />
       <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.33" />
+      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Http" Version="3.2.0" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="5.0.1" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage.Queues" Version="5.0.1" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Tables" Version="1.0.0" />

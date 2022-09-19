@@ -7,6 +7,6 @@ public interface IJobDescriptorBuilder
     IJobDescriptorBuilder EndWith(string taskName);
     IJobDescriptorBuilder HandleFailureWith(string taskName);
     IJobDescriptorBuilder CleanUpWith(string taskName);
-    IJobDescriptorBuilder AddTransitions(Action<ITransitionBuilder> builder);
+    IJobDescriptorBuilder AddTransition(Action<ITransitionBuilder> builder);
     internal JobDescriptor Build();
 }

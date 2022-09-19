@@ -2,14 +2,12 @@ namespace Carby.JobManager.Functions.JobModel;
 
 internal sealed class JobDescriptorBuilder : IJobDescriptorBuilder
 {
-    private readonly JobDescriptor _jobDescriptor;
+    private readonly JobDescriptor _jobDescriptor = new()
+    {
+        Transitions = new Dictionary<string, ICollection<TransitionDescriptor>>()
+    };
     
     string IJobDescriptorBuilder.Name { get; set; } = string.Empty;
-
-    public JobDescriptorBuilder()
-    {
-        _jobDescriptor = new JobDescriptor();
-    }
 
     public IJobDescriptorBuilder StartWith(string taskName)
     {
@@ -40,11 +38,17 @@ internal sealed class JobDescriptorBuilder : IJobDescriptorBuilder
         return _jobDescriptor;
     }
 
-    public IJobDescriptorBuilder AddTransitions(Action<ITransitionBuilder> builderCb)
+    public IJobDescriptorBuilder AddTransition(Action<ITransitionBuilder> builderCb)
     {
         var builder = new TransitionBuilder();
         builderCb(builder);
-        _jobDescriptor.Transitions = builder.Build();
+        var transition = builder.Build();
+        if (!_jobDescriptor.Transitions.ContainsKey(transition.FromTask))
+        {
+            _jobDescriptor.Transitions[transition.FromTask] = new List<TransitionDescriptor>();
+        }
+        _jobDescriptor.Transitions[transition.FromTask].Add(transition);
+
         return this;
     }
 }

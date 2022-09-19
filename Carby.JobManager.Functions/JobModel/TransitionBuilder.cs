@@ -2,45 +2,41 @@ namespace Carby.JobManager.Functions.JobModel;
 
 internal sealed  class TransitionBuilder : ITransitionBuilder
 {
-    private string? _currentSourceTask;
-    private readonly IDictionary<string, ICollection<TransitionDescriptor>> _transitions = new Dictionary<string, ICollection<TransitionDescriptor>>();
-
+    private readonly TransitionDescriptor _descriptor = new ();
+    
     public ITransitionBuilder From(string sourceTask)
     {
-        _currentSourceTask = sourceTask;
+        _descriptor.FromTask = sourceTask;
         return this;
     }
 
     public ITransitionBuilder To(string targetTask)
     {
-        return To(targetTask, context => true);
+        _descriptor.ToTask = targetTask;
+        return this;
     }
     
-    public ITransitionBuilder To(string targetTask, Func<IJobContext, bool> condition)
+    public ITransitionBuilder When(Func<IJobContext, bool> condition)
     {
-        if (_currentSourceTask == null)
-        {
-            throw new InvalidOperationException("Must call 'From' to create a source first!");
-        }
-
-        if (!_transitions.ContainsKey(_currentSourceTask))
-        {
-            _transitions[_currentSourceTask] = new List<TransitionDescriptor>();
-        }
-        
-        _transitions[_currentSourceTask].Add(new TransitionDescriptor
-        {
-            FromTask = _currentSourceTask,
-            ToTask = targetTask,
-            When = condition
-        });
-
+        _descriptor.When = condition;
         return this;
     }
 
-    public IDictionary<string, ICollection<TransitionDescriptor>> Build()
+    public ITransitionBuilder FanOut(Func<IJobContext, int> instanceCountProvider)
     {
-        return _transitions;
+        _descriptor.FanOut = instanceCountProvider;
+        return this;
+    }
+
+    public ITransitionBuilder FanIn()
+    {
+        _descriptor.FanIn = true;
+        return this;
+    }
+
+    public TransitionDescriptor Build()
+    {
+        return _descriptor;
     }
 
 }

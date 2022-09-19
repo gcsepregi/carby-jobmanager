@@ -4,5 +4,7 @@ public interface ITransitionBuilder
 {
     ITransitionBuilder From(string sourceTask);
     ITransitionBuilder To(string targetTask);
-    ITransitionBuilder To(string targetTask, Func<IJobContext, bool> condition);
+    ITransitionBuilder When(Func<IJobContext, bool> condition);
+    ITransitionBuilder FanOut(Func<IJobContext, int> instanceCountProvider);
+    ITransitionBuilder FanIn();
 }
