@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Azure.Data.Tables;
 using Carby.JobManager.Functions.JobModel;
@@ -8,8 +9,11 @@ internal sealed class JobContextManagerService : StorageManagerServiceBase, IJob
 {
     private const string JobContextsTableName = "jobcontexts";
 
-    public async Task<IJobContext> ReadJobContextAsync(string? jobName, string? jobId)
+    public async Task<IJobContext> ReadJobContextAsync()
     {
+        var jobName = Activity.Current?.GetBaggageItem(ICommonServices.CurrentJobNameKey) ?? throw new InvalidOperationException("Activity must already be started and baggage and tags filled");
+        var jobId = Activity.Current?.GetBaggageItem(ICommonServices.InternalJobIdKey) ?? throw new InvalidOperationException("Activity must already be started and baggage and tags filled");
+
         var tableClient = new TableClient(GetStorageConnection(), JobContextsTableName);
         var tableEntity = await tableClient.GetEntityAsync<TableEntity>(jobName, jobId);
 
@@ -21,8 +25,9 @@ internal sealed class JobContextManagerService : StorageManagerServiceBase, IJob
         return jobContext;
     }
 
-    public async Task PersistJobContextAsync(string? jobName, IJobContext jobContext)
+    public async Task PersistJobContextAsync(IJobContext jobContext)
     {
+        var jobName = Activity.Current?.GetBaggageItem(ICommonServices.CurrentJobNameKey) ?? throw new InvalidOperationException("Activity must already be started and baggage and tags filled");
         var tableClient = new TableClient(GetStorageConnection(), JobContextsTableName);
         await tableClient.CreateIfNotExistsAsync();
         var tableEntity = new TableEntity(jobName, jobContext.JobId);
@@ -30,7 +35,7 @@ internal sealed class JobContextManagerService : StorageManagerServiceBase, IJob
         {
             tableEntity[key] = value;
         }
-        await tableClient.AddEntityAsync(tableEntity);
+        await tableClient.UpsertEntityAsync(tableEntity);
     }
 
     public Task<IJobContext> ConvertUserType<T>(string jobName, T userObject)

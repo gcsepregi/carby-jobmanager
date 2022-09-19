@@ -1,14 +1,16 @@
+using System.Text.Json;
+using Carby.JobManager.Functions.Services;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 
 namespace Carby.JobManager.Functions.SimpleTask;
 
 internal class SimpleTaskReturnValueHandler : IValueBinder
 {
-    private readonly SimpleTaskExtensionConfigProvider _configProvider;
+    private readonly IJobContextManagerService _jobContextManager;
 
-    public SimpleTaskReturnValueHandler(SimpleTaskExtensionConfigProvider configProvider)
+    public SimpleTaskReturnValueHandler(IJobContextManagerService jobContextManager)
     {
-        _configProvider = configProvider;
+        _jobContextManager = jobContextManager;
     }
 
     public Task<object> GetValueAsync()
@@ -23,9 +25,15 @@ internal class SimpleTaskReturnValueHandler : IValueBinder
 
     public Type Type => typeof(object);
     
-    public Task SetValueAsync(object value, CancellationToken cancellationToken)
+    public async Task SetValueAsync(object value, CancellationToken cancellationToken)
     {
-        Console.WriteLine("ReturnHandler: SetValueAsync");
-        return Task.CompletedTask;
+        var dictionaryObject = JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(value));
+        var jobContext = await _jobContextManager.ReadJobContextAsync();
+        foreach (var (key, val) in dictionaryObject!)
+        {
+            jobContext[key] = val;
+        }
+
+        await _jobContextManager.PersistJobContextAsync(jobContext);
     }
 }

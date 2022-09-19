@@ -73,7 +73,6 @@ internal sealed class StorageQueueMessagingService : StorageManagerServiceBase, 
     
     private async Task<string?> FindNextTaskAsync(string jobName, string currentTask)
     {
-        var jobId = Activity.Current!.GetBaggageItem(ICommonServices.InternalJobIdKey);
         var jobDescriptor = _namedJobCollection[jobName];
 
         if (jobDescriptor.CleanUpTask == currentTask)
@@ -90,7 +89,7 @@ internal sealed class StorageQueueMessagingService : StorageManagerServiceBase, 
         string? guardedTask = null;
 
         var possibleTransitions = jobDescriptor.Transitions[currentTask];
-        var jobContext = await _jobContextManagerService.ReadJobContextAsync(jobName, jobId);
+        var jobContext = await _jobContextManagerService.ReadJobContextAsync();
         
         foreach (var transition in possibleTransitions)
         {

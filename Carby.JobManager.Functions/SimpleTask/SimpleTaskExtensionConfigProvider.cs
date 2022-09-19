@@ -39,7 +39,7 @@ internal class SimpleTaskExtensionConfigProvider : IExtensionConfigProvider
 
     private IValueBinder CreateReturnValueHandler()
     {
-        return new SimpleTaskReturnValueHandler(this);
+        return new SimpleTaskReturnValueHandler(_jobContextManagerService);
     }
 
 }

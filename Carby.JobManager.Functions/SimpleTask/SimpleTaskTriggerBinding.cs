@@ -46,12 +46,8 @@ internal sealed class SimpleTaskTriggerBinding : ITriggerBinding
     private async Task<IReadOnlyDictionary<string, object>> GetBindingDataAsync()
     {
         var data = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-
         var method = _context.Method!;
-
-        var jobName = Activity.Current?.GetBaggageItem(ICommonServices.CurrentJobNameKey);
-        var jobId = Activity.Current?.GetBaggageItem(ICommonServices.InternalJobIdKey);
-        var jobContext = await _context.JobContextManager!.ReadJobContextAsync(jobName, jobId);
+        var jobContext = await _context.JobContextManager!.ReadJobContextAsync();
 
         foreach (var otherParam in method.GetParameters())
         {

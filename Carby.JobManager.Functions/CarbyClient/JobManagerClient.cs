@@ -29,7 +29,7 @@ internal sealed class JobManagerClient : IJobManagerClient
         activity.AddTag(ICommonServices.TaskInstanceIdKey, ActivityTraceId.CreateRandom().ToHexString());
         activity.StartActivity();
 
-        await _jobContextManagerService.PersistJobContextAsync(jobName, jobContext);
+        await _jobContextManagerService.PersistJobContextAsync(jobContext);
         await _messagingService.TriggerJobAsync(jobName);
         
         activity.StopActivity();
