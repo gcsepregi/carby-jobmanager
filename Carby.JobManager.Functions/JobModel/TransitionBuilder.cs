@@ -22,13 +22,13 @@ internal sealed  class TransitionBuilder : ITransitionBuilder
         return this;
     }
 
-    public ITransitionBuilder FanOut(Func<IJobContext, int> instanceCountProvider)
+    public ITransitionBuilder Parallelization(Func<IJobContext, int> instanceCountProvider)
     {
         _descriptor.FanOut = instanceCountProvider;
         return this;
     }
 
-    public ITransitionBuilder FanIn()
+    public ITransitionBuilder Synchronize()
     {
         _descriptor.FanIn = true;
         return this;

@@ -2,9 +2,12 @@ namespace Carby.JobManager.Functions.Services;
 
 public interface ICommonServices
 {
-    const string DefaultJobName = "CarbyDefaultJob";
-    const string CurrentJobNameKey = "CurrentJobName";
-    const string InternalJobIdKey = "InternalJobId";
-    const string TaskInstanceIdKey = "TaskInstanceId";
-    const string CurrentTaskNameKey = "CurrentTaskName";
+    const string CurrentJobName = "CurrentJobName";
+    const string InternalJobId = "InternalJobId";
+    const string TaskInstanceId = "TaskInstanceId";
+    const string CurrentTaskName = "CurrentTaskName";
+    const string FanIn = "FanIn";
+    const string FanId = "FanId";
+    const string FanGroupId = "FanGroupId";
+    const string FanGroupSize = "FanGroupSize";
 }

@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Carby.JobManager.Functions.Tracing;
 
@@ -41,8 +43,15 @@ public static class CarbyTraceHelper
         DistributedContextPropagator.Current.ExtractTraceIdAndState(headers,
             (object? carrier, string name, out string? value, out IEnumerable<string>? values) =>
             {
+                if (carrier == null)
+                {
+                    value = null;
+                    values = null;
+                    return;
+                }
+                
                 values = default;
-                var dictionary = (IDictionary<string, string>)carrier!;
+                var dictionary = (IDictionary<string, string>)carrier;
                 value = dictionary.ContainsKey(name) ? dictionary[name] : default;
             }, out var traceId, out var traceState);
 

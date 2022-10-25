@@ -43,7 +43,7 @@ internal sealed class CarbyEventTracingListener : IObserver<KeyValuePair<string,
         else if (key.EndsWith("Stop"))
         {
             var instanceId = activity.Tags
-                .FirstOrDefault(kv => ICommonServices.TaskInstanceIdKey.Equals(kv.Key)).Value;
+                .FirstOrDefault(kv => ICommonServices.TaskInstanceId.Equals(kv.Key)).Value;
             var requestData = _jobHistoryService.LoadHistoryItem(instanceId);
             var rq = ToRequest(requestData, activity);
             _client.TrackRequest(rq);

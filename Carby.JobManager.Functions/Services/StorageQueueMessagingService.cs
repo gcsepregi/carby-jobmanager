@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Azure.Storage.Queues;
+using Carby.JobManager.Functions.JobModel;
 
 namespace Carby.JobManager.Functions.Services;
 
@@ -25,53 +26,73 @@ internal sealed class StorageQueueMessagingService : StorageManagerServiceBase, 
             poisonQueueClient, 
             GetMessageVisibilityTimeout(queueName),
             GetParallelMessageCount(queueName),
-            GetMessageRetryCount(queueName)
+            GetMessageRetryCount(queueName),
+            this
             );
     }
 
     public async Task TriggerJobAsync(string jobName)
     {
-        var jobDescriptor = _namedJobCollection[jobName ?? ICommonServices.DefaultJobName];
-        await TriggerTaskAsync(jobDescriptor.StartTask!);
+        var jobDescriptor = _namedJobCollection[jobName];
+        await TriggerTaskAsync(jobDescriptor.StartTask);
     }
 
-    public async Task TriggerNextTaskAsync(string jobName, string currentTask)
+    public async Task TriggerNextTaskAsync(TaskRequestEnvelope taskRequest, string jobName, string currentTask)
     {
-        var nextTask = await FindNextTaskAsync(jobName, currentTask);
+        var jobContext = await _jobContextManagerService.ReadJobContextAsync();
+        var nextTask = FindNextTaskAsync(jobName, currentTask, jobContext);
         if (nextTask != null)
         {
-            await TriggerTaskAsync(nextTask);
+            if (nextTask.FanOut != null)
+            {
+                await TriggerTaskAsync(nextTask.ToTask, taskRequest, nextTask.FanOut(jobContext));
+            }
+            else
+            {
+                await TriggerTaskAsync(nextTask.ToTask, taskRequest);
+            }
         }
     }
 
     public async Task TriggerFailureHandlerTaskAsync(string jobName, string currentTask)
     {
-        var jobDescriptor = _namedJobCollection[jobName ?? ICommonServices.DefaultJobName];
+        var jobDescriptor = _namedJobCollection[jobName];
 
     }
-    
-    public async Task TriggerTaskAsync(string taskName)
+
+    private static async Task TriggerTaskAsync(string taskName, TaskRequestEnvelope? originalRequest = null, int triggerCount = 1)
     {
         var queueClient = new QueueClient(GetStorageConnection(), taskName.ToLower());
-        var taskRequest = new TaskRequestEnvelope
-        {
-            Headers =
+        var fanGroupId = ActivityTraceId.CreateRandom().ToHexString();
+        for (var i = 0; i < triggerCount; i++) {
+            var taskRequest = new TaskRequestEnvelope
             {
-                [ICommonServices.TaskInstanceIdKey] = ActivityTraceId.CreateRandom().ToHexString(),
-                [ICommonServices.CurrentTaskNameKey] = taskName
-            }
-        };
+                Headers =
+                {
+                    [ICommonServices.TaskInstanceId] = ActivityTraceId.CreateRandom().ToHexString(),
+                    [ICommonServices.CurrentTaskName] = taskName
+                }
+            };
 
-        DistributedContextPropagator.Current.Inject(Activity.Current, taskRequest, (carrier, name, value) =>
-        {
-            var request = (TaskRequestEnvelope)carrier!;
-            request.Headers[name] = value;
-        });
-        
-        await queueClient.SendMessageAsync(new BinaryData(JsonSerializer.Serialize(taskRequest)));
+            if (triggerCount > 1)
+            {
+                taskRequest.Headers[ICommonServices.FanId] = $"{i}";
+                taskRequest.Headers[ICommonServices.FanGroupId] = fanGroupId;
+                taskRequest.Headers[ICommonServices.FanGroupSize] = $"{triggerCount}";
+            }
+
+            DistributedContextPropagator.Current.Inject(Activity.Current, taskRequest, (carrier, name, value) =>
+            {
+                var request = (TaskRequestEnvelope)carrier!;
+                request.Headers[name] = value;
+            });
+
+            await queueClient.SendMessageAsync(new BinaryData(JsonSerializer.Serialize(taskRequest)));
+        }
     }
     
-    private async Task<string?> FindNextTaskAsync(string jobName, string currentTask)
+    private TransitionDescriptor? FindNextTaskAsync(string jobName, string currentTask,
+        IJobContext jobContext)
     {
         var jobDescriptor = _namedJobCollection[jobName];
 
@@ -82,24 +103,27 @@ internal sealed class StorageQueueMessagingService : StorageManagerServiceBase, 
         
         if (jobDescriptor.EndTask == currentTask || jobDescriptor.HandleFailureTask == currentTask)
         {
-            return jobDescriptor.CleanUpTask;
+            return new TransitionDescriptor
+            {
+                FromTask = currentTask,
+                ToTask = jobDescriptor.CleanUpTask
+            };
         }
 
-        string? defaultTask = null;
-        string? guardedTask = null;
+        TransitionDescriptor? defaultTask = null;
+        TransitionDescriptor? guardedTask = null;
 
         var possibleTransitions = jobDescriptor.Transitions[currentTask];
-        var jobContext = await _jobContextManagerService.ReadJobContextAsync();
         
         foreach (var transition in possibleTransitions)
         {
             if (transition.When == null)
             {
-                defaultTask ??= transition.ToTask;
+                defaultTask ??= transition;
             } 
             else if (transition.When(jobContext))
             {
-                guardedTask = transition.ToTask;
+                guardedTask = transition;
                 break;
             }
         }

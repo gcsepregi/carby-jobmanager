@@ -8,11 +8,11 @@ internal sealed class JobHistoryService : StorageManagerServiceBase, IJobHistory
 {
     public void SaveHistoryItem(Activity activity)
     {
-        var jobName = activity.GetBaggageItem(ICommonServices.CurrentJobNameKey);
-        var jobId = activity.GetBaggageItem(ICommonServices.InternalJobIdKey);
+        var jobName = activity.GetBaggageItem(ICommonServices.CurrentJobName);
+        var jobId = activity.GetBaggageItem(ICommonServices.InternalJobId);
         var taskInstanceId = activity.Tags
                                  .FirstOrDefault(kv =>
-                                     ICommonServices.TaskInstanceIdKey.Equals(kv.Key))
+                                     ICommonServices.TaskInstanceId.Equals(kv.Key))
                                  .Value ??
                              Guid.NewGuid().ToString();
         var tableClient = new TableClient(GetStorageConnection(), "jobhistory");
@@ -34,7 +34,7 @@ internal sealed class JobHistoryService : StorageManagerServiceBase, IJobHistory
 
     public IDictionary<string, object> LoadHistoryItem(string? instanceId)
     {
-        var jobName = Activity.Current!.GetBaggageItem(ICommonServices.CurrentJobNameKey);
+        var jobName = Activity.Current!.GetBaggageItem(ICommonServices.CurrentJobName);
         var tableClient = new TableClient(GetStorageConnection(), "jobhistory");
         return tableClient.GetEntity<TableEntity>(jobName, instanceId).Value;
     }

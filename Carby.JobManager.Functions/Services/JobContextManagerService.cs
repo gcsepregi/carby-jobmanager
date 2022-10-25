@@ -11,8 +11,8 @@ internal sealed class JobContextManagerService : StorageManagerServiceBase, IJob
 
     public async Task<IJobContext> ReadJobContextAsync()
     {
-        var jobName = Activity.Current?.GetBaggageItem(ICommonServices.CurrentJobNameKey) ?? throw new InvalidOperationException("Activity must already be started and baggage and tags filled");
-        var jobId = Activity.Current?.GetBaggageItem(ICommonServices.InternalJobIdKey) ?? throw new InvalidOperationException("Activity must already be started and baggage and tags filled");
+        var jobName = Activity.Current?.GetBaggageItem(ICommonServices.CurrentJobName) ?? throw new InvalidOperationException("Activity must already be started and baggage and tags filled");
+        var jobId = Activity.Current?.GetBaggageItem(ICommonServices.InternalJobId) ?? throw new InvalidOperationException("Activity must already be started and baggage and tags filled");
 
         var tableClient = new TableClient(GetStorageConnection(), JobContextsTableName);
         var tableEntity = await tableClient.GetEntityAsync<TableEntity>(jobName, jobId);
@@ -27,7 +27,7 @@ internal sealed class JobContextManagerService : StorageManagerServiceBase, IJob
 
     public async Task PersistJobContextAsync(IJobContext jobContext)
     {
-        var jobName = Activity.Current?.GetBaggageItem(ICommonServices.CurrentJobNameKey) ?? throw new InvalidOperationException("Activity must already be started and baggage and tags filled");
+        var jobName = Activity.Current?.GetBaggageItem(ICommonServices.CurrentJobName) ?? throw new InvalidOperationException("Activity must already be started and baggage and tags filled");
         var tableClient = new TableClient(GetStorageConnection(), JobContextsTableName);
         await tableClient.CreateIfNotExistsAsync();
         var tableEntity = new TableEntity(jobName, jobContext.JobId);

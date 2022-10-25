@@ -13,6 +13,7 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
     private readonly TimeSpan _messageVisibilityTimeout;
     private readonly int _parallelMessageCount;
     private readonly int _messageRetryCount;
+    private readonly StorageQueueMessagingService _storageQueueMessagingService;
     private bool _stopRequested;
     private Task? _receiverTask;
 
@@ -23,13 +24,15 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
         QueueClient poisonQueueClient,
         TimeSpan messageVisibilityTimeout,
         int parallelMessageCount,
-        int messageRetryCount)
+        int messageRetryCount, 
+        StorageQueueMessagingService storageQueueMessagingService)
     {
         _queueClient = queueClient;
         _poisonQueueClient = poisonQueueClient;
         _messageVisibilityTimeout = messageVisibilityTimeout;
         _parallelMessageCount = parallelMessageCount;
         _messageRetryCount = messageRetryCount;
+        _storageQueueMessagingService = storageQueueMessagingService;
     }
 
     public ValueTask DisposeAsync()
@@ -108,19 +111,24 @@ internal sealed class StorageQueueMessageProcessor : IMessageProcessor
             var envelope = message.Body.ToObjectFromJson<TaskRequestEnvelope>();
             activity = _queueClient.Name.CreateActivity(ActivityKind.Client);
             activity.FillActivityFromDistributedContext(envelope.Headers);
-            activity.AddTag(ICommonServices.TaskInstanceIdKey, envelope.Headers[ICommonServices.TaskInstanceIdKey]);
-            activity.AddTag(ICommonServices.CurrentTaskNameKey, envelope.Headers[ICommonServices.CurrentTaskNameKey]);
+            activity.AddTag(ICommonServices.TaskInstanceId, envelope.Headers[ICommonServices.TaskInstanceId]);
+            activity.AddTag(ICommonServices.CurrentTaskName, envelope.Headers[ICommonServices.CurrentTaskName]);
             activity.OnActivityImport();
             activity.StartActivity();
 
             var result = await OnMessage!(new TaskRequest(), cancellationToken);
 
+            var jobName = Activity.Current?.GetBaggageItem(ICommonServices.CurrentJobName) ?? throw new InvalidOperationException("Activity must already be started and baggage and tags filled");
+            var taskName = (string?)Activity.Current.GetTagItem(ICommonServices.CurrentTaskName) ?? throw new InvalidOperationException("Activity must already be started and baggage and tags filled");
+        
             if (result.Succeeded)
             {
+                await _storageQueueMessagingService.TriggerNextTaskAsync(envelope, jobName, taskName);
                 await _queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt, cancellationToken);
             }
             else
             {
+                await _storageQueueMessagingService.TriggerFailureHandlerTaskAsync(jobName, taskName);
                 await ProcessExceptionAsync(result.Exception!, message, cancellationToken);
             }
         }
