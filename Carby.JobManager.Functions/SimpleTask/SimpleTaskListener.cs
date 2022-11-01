@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Carby.JobManager.Functions.Services;
 using Microsoft.Azure.WebJobs.Host.Executors;
 using Microsoft.Azure.WebJobs.Host.Listeners;
