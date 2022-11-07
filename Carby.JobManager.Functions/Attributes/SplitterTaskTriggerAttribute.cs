@@ -6,9 +6,9 @@ namespace Carby.JobManager.Functions.Attributes;
 #pragma warning disable CS0618
 [Binding(TriggerHandlesReturnValue = true)]
 #pragma warning restore CS0618
-public class SimpleTaskTriggerAttribute : AbstractCarbyTaskAttribute
+public class SplitterTaskTriggerAttribute : AbstractCarbyTaskAttribute
 {
-    public SimpleTaskTriggerAttribute(string taskName) : base(taskName)
+    public SplitterTaskTriggerAttribute(string taskName) : base(taskName)
     {
     }
 }

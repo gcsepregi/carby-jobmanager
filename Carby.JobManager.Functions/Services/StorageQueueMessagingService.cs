@@ -43,14 +43,7 @@ internal sealed class StorageQueueMessagingService : StorageManagerServiceBase, 
         var nextTask = FindNextTaskAsync(jobName, currentTask, jobContext);
         if (nextTask != null)
         {
-            if (nextTask.FanOut != null)
-            {
-                await TriggerTaskAsync(nextTask.ToTask, taskRequest, nextTask.FanOut(jobContext));
-            }
-            else
-            {
-                await TriggerTaskAsync(nextTask.ToTask, taskRequest);
-            }
+            await TriggerTaskAsync(nextTask.ToTask, taskRequest);
         }
     }
 
@@ -60,35 +53,25 @@ internal sealed class StorageQueueMessagingService : StorageManagerServiceBase, 
 
     }
 
-    private static async Task TriggerTaskAsync(string taskName, TaskRequestEnvelope? originalRequest = null, int triggerCount = 1)
+    private static async Task TriggerTaskAsync(string taskName, TaskRequestEnvelope? originalRequest = null)
     {
         var queueClient = new QueueClient(GetStorageConnection(), taskName.ToLower());
-        var fanGroupId = ActivityTraceId.CreateRandom().ToHexString();
-        for (var i = 0; i < triggerCount; i++) {
-            var taskRequest = new TaskRequestEnvelope
+        var taskRequest = new TaskRequestEnvelope
+        {
+            Headers =
             {
-                Headers =
-                {
-                    [ICommonServices.TaskInstanceId] = ActivityTraceId.CreateRandom().ToHexString(),
-                    [ICommonServices.CurrentTaskName] = taskName
-                }
-            };
-
-            if (triggerCount > 1)
-            {
-                taskRequest.Headers[ICommonServices.FanId] = $"{i}";
-                taskRequest.Headers[ICommonServices.FanGroupId] = fanGroupId;
-                taskRequest.Headers[ICommonServices.FanGroupSize] = $"{triggerCount}";
+                [ICommonServices.TaskInstanceId] = ActivityTraceId.CreateRandom().ToHexString(),
+                [ICommonServices.CurrentTaskName] = taskName
             }
+        };
 
-            DistributedContextPropagator.Current.Inject(Activity.Current, taskRequest, (carrier, name, value) =>
-            {
-                var request = (TaskRequestEnvelope)carrier!;
-                request.Headers[name] = value;
-            });
+        DistributedContextPropagator.Current.Inject(Activity.Current, taskRequest, (carrier, name, value) =>
+        {
+            var request = (TaskRequestEnvelope)carrier!;
+            request.Headers[name] = value;
+        });
 
-            await queueClient.SendMessageAsync(new BinaryData(JsonSerializer.Serialize(taskRequest)));
-        }
+        await queueClient.SendMessageAsync(new BinaryData(JsonSerializer.Serialize(taskRequest)));
     }
     
     private TransitionDescriptor? FindNextTaskAsync(string jobName, string currentTask,

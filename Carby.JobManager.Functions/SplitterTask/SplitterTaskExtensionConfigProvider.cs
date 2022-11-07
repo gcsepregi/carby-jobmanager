@@ -4,23 +4,23 @@ using Carby.JobManager.Functions.Services;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 using Microsoft.Azure.WebJobs.Host.Triggers;
 
-namespace Carby.JobManager.Functions.SimpleTask;
+namespace Carby.JobManager.Functions.SplitterTask;
 
-internal class SimpleTaskExtensionConfigProvider : AbstractCarbyTaskExtensionConfigProvider<SimpleTaskTriggerAttribute>
+internal class SplitterTaskExtensionConfigProvider : AbstractCarbyTaskExtensionConfigProvider<SplitterTaskTriggerAttribute>
 {
-    public SimpleTaskExtensionConfigProvider(IMessagingService messagingProvider, IJobContextManagerService jobContextManagerService) 
+    public SplitterTaskExtensionConfigProvider(IMessagingService messagingProvider, IJobContextManagerService jobContextManagerService) 
         : base(messagingProvider, jobContextManagerService)
     {
     }
 
     protected override ITriggerBindingProvider CreateTriggerBindingProvider()
     {
-        return new SimpleTaskTriggerBindingProvider(this);
+        return new SplitterTaskTriggerBindingProvider(this);
     }
 
     protected override IValueBinder CreateReturnValueHandler()
     {
-        return new SimpleTaskReturnValueHandler(JobContextManagerService);
+        return new SplitterTaskReturnValueHandler(JobContextManagerService);
     }
 
 }

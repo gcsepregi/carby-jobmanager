@@ -1,12 +1,12 @@
 using Microsoft.Azure.WebJobs.Host.Bindings;
 
-namespace Carby.JobManager.Functions.SimpleTask;
+namespace Carby.JobManager.Functions.AbstractCarbyTask;
 
-public class SimpleTaskValueProvider : IValueBinder
+internal class AbstractCarbyTaskValueProvider : IValueBinder
 {
     private object _value;
 
-    public SimpleTaskValueProvider(object value)
+    public AbstractCarbyTaskValueProvider(object value)
     {
         _value = value;
     }
@@ -28,4 +28,5 @@ public class SimpleTaskValueProvider : IValueBinder
         _value = value;
         return Task.CompletedTask;
     }
+
 }

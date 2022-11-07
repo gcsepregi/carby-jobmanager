@@ -5,6 +5,4 @@ public interface ITransitionBuilder
     ITransitionBuilder From(string sourceTask);
     ITransitionBuilder To(string targetTask);
     ITransitionBuilder When(Func<IJobContext, bool> condition);
-    ITransitionBuilder Parallelization(Func<IJobContext, int> instanceCountProvider);
-    ITransitionBuilder Synchronize();
 }

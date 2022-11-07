@@ -1,6 +1,7 @@
 using Carby.JobManager.Functions.CarbyClient;
 using Carby.JobManager.Functions.Services;
 using Carby.JobManager.Functions.SimpleTask;
+using Carby.JobManager.Functions.SplitterTask;
 using Carby.JobManager.Functions.Tracing;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Azure.WebJobs;
@@ -18,6 +19,7 @@ public static class CarbyWebJobsBuilderExtensions
         }
 
         builder.AddExtension<SimpleTaskExtensionConfigProvider>();
+        builder.AddExtension<SplitterTaskExtensionConfigProvider>();
         builder.AddExtension<JobManagerClientExtensionConfigProvider>();
         builder.Services.AddSingleton<IMessagingService, StorageQueueMessagingService>();
         builder.Services.AddSingleton<INamedJobCollection, NamedJobCollection>();
