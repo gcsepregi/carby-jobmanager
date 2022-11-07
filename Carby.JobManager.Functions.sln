@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Carby.JobManager.Functions", "Carby.JobManager.Functions\Carby.JobManager.Functions.csproj", "{42B34DB6-333C-4A63-B779-22F3B02D0BD7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Carby.JobManager.Functions.Tests", "Carby.JobManager.Functions.Tests\Carby.JobManager.Functions.Tests.csproj", "{9ACB0D68-4E40-41DD-9D39-5AE26D1EA3EF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{42B34DB6-333C-4A63-B779-22F3B02D0BD7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{42B34DB6-333C-4A63-B779-22F3B02D0BD7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{42B34DB6-333C-4A63-B779-22F3B02D0BD7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9ACB0D68-4E40-41DD-9D39-5AE26D1EA3EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9ACB0D68-4E40-41DD-9D39-5AE26D1EA3EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9ACB0D68-4E40-41DD-9D39-5AE26D1EA3EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9ACB0D68-4E40-41DD-9D39-5AE26D1EA3EF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

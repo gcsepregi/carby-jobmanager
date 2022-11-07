@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Carby.JobManager.Functions.Tests": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7033",
+      "launchBrowser": false
+    }
+  }
+}
