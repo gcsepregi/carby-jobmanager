@@ -1,6 +1,6 @@
 using Carby.JobManager.Functions.CarbyClient;
 using Carby.JobManager.Functions.Services;
-using Carby.JobManager.Functions.SimpleTask;
+using Carby.JobManager.Functions.TransformTask;
 using Carby.JobManager.Functions.SplitterTask;
 using Carby.JobManager.Functions.Tracing;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -18,7 +18,7 @@ public static class CarbyWebJobsBuilderExtensions
             throw new ArgumentNullException(nameof(builder));
         }
 
-        builder.AddExtension<SimpleTaskExtensionConfigProvider>();
+        builder.AddExtension<TransformTaskExtensionConfigProvider>();
         builder.AddExtension<SplitterTaskExtensionConfigProvider>();
         builder.AddExtension<JobManagerClientExtensionConfigProvider>();
         builder.Services.AddSingleton<IMessagingService, StorageQueueMessagingService>();

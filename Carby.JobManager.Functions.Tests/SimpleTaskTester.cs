@@ -11,7 +11,7 @@ public class SimpleTaskTester
 
     [FunctionName(nameof(SimpleTaskStartAsync))]
     public Task<Dictionary<string, object>> SimpleTaskStartAsync(
-        [SimpleTaskTrigger(nameof(SimpleTaskStartAsync))] TaskRequest request,
+        [TransformTaskTrigger(nameof(SimpleTaskStartAsync))] TaskRequest request,
         string greeting,
         string name)
     {
@@ -37,7 +37,7 @@ public class SimpleTaskTester
 
     [FunctionName(nameof(SimpleTaskEndAsync))]
     public Task<TaskResponse> SimpleTaskEndAsync(
-        [SimpleTaskTrigger(nameof(SimpleTaskEndAsync))] TaskRequest request
+        [TransformTaskTrigger(nameof(SimpleTaskEndAsync))] TaskRequest request
         )
     {
         Console.WriteLine("End task");
@@ -46,7 +46,7 @@ public class SimpleTaskTester
 
     [FunctionName(nameof(SimpleTaskFailureAsync))]
     public Task<TaskResponse> SimpleTaskFailureAsync(
-        [SimpleTaskTrigger(nameof(SimpleTaskFailureAsync))] TaskRequest request
+        [TransformTaskTrigger(nameof(SimpleTaskFailureAsync))] TaskRequest request
         )
     {
         Console.WriteLine("Failure handler task");
@@ -55,7 +55,7 @@ public class SimpleTaskTester
 
     [FunctionName(nameof(SimpleTaskCleanUpAsync))]
     public Task<TaskResponse> SimpleTaskCleanUpAsync(
-        [SimpleTaskTrigger(nameof(SimpleTaskCleanUpAsync))] TaskRequest request
+        [TransformTaskTrigger(nameof(SimpleTaskCleanUpAsync))] TaskRequest request
         )
     {
         Console.WriteLine("CleanUp task");

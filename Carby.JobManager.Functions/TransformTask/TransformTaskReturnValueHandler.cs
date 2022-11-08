@@ -2,13 +2,13 @@ using System.Text.Json;
 using Carby.JobManager.Functions.Services;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 
-namespace Carby.JobManager.Functions.SimpleTask;
+namespace Carby.JobManager.Functions.TransformTask;
 
-internal class SimpleTaskReturnValueHandler : IValueBinder
+internal class TransformTaskReturnValueHandler : IValueBinder
 {
     private readonly IJobContextManagerService _jobContextManager;
 
-    public SimpleTaskReturnValueHandler(IJobContextManagerService jobContextManager)
+    public TransformTaskReturnValueHandler(IJobContextManagerService jobContextManager)
     {
         _jobContextManager = jobContextManager;
     }
