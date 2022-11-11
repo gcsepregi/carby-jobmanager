@@ -2,7 +2,7 @@ using System.Text.Json;
 using Carby.JobManager.Functions.Services;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 
-namespace Carby.JobManager.Functions.SplitterTask;
+namespace Carby.JobManager.Functions.Tasks.SplitterTask;
 
 internal class SplitterTaskReturnValueHandler : IValueBinder
 {

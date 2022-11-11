@@ -1,7 +1,7 @@
 using System.Reflection;
 using Microsoft.Azure.WebJobs.Host.Triggers;
 
-namespace Carby.JobManager.Functions.AbstractCarbyTask;
+namespace Carby.JobManager.Functions.Tasks.AbstractCarbyTask;
 
 internal abstract class AbstractCarbyTaskTriggerBindingProvider<T> : ITriggerBindingProvider where T : Attribute
 {

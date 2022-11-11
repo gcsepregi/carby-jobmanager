@@ -1,7 +1,7 @@
 using Carby.JobManager.Functions.CarbyClient;
 using Carby.JobManager.Functions.Services;
-using Carby.JobManager.Functions.TransformTask;
-using Carby.JobManager.Functions.SplitterTask;
+using Carby.JobManager.Functions.Tasks.SplitterTask;
+using Carby.JobManager.Functions.Tasks.TransformTask;
 using Carby.JobManager.Functions.Tracing;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Azure.WebJobs;

@@ -1,11 +1,10 @@
 using System.Text.Json;
-using Carby.JobManager.Functions.Attributes;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 using Microsoft.Azure.WebJobs.Host.Listeners;
 using Microsoft.Azure.WebJobs.Host.Protocols;
 using Microsoft.Azure.WebJobs.Host.Triggers;
 
-namespace Carby.JobManager.Functions.AbstractCarbyTask;
+namespace Carby.JobManager.Functions.Tasks.AbstractCarbyTask;
 
 internal abstract class AbstractCarbyTaskTriggerBinding<T> : ITriggerBinding
 {

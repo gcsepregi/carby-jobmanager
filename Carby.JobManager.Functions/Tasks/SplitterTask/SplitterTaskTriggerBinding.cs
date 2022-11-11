@@ -1,8 +1,8 @@
-using Carby.JobManager.Functions.AbstractCarbyTask;
 using Carby.JobManager.Functions.Attributes;
+using Carby.JobManager.Functions.Tasks.AbstractCarbyTask;
 using Microsoft.Azure.WebJobs.Host.Listeners;
 
-namespace Carby.JobManager.Functions.SplitterTask;
+namespace Carby.JobManager.Functions.Tasks.SplitterTask;
 
 internal class SplitterTaskTriggerBinding : AbstractCarbyTaskTriggerBinding<SplitterTaskTriggerAttribute>
 {

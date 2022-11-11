@@ -2,7 +2,7 @@ using System.Text.Json;
 using Carby.JobManager.Functions.Services;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 
-namespace Carby.JobManager.Functions.TransformTask;
+namespace Carby.JobManager.Functions.Tasks.TransformTask;
 
 internal class TransformTaskReturnValueHandler : IValueBinder
 {

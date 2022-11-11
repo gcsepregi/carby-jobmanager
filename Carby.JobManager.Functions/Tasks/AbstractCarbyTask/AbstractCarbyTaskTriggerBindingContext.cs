@@ -2,7 +2,7 @@ using System.Reflection;
 using Carby.JobManager.Functions.Services;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 
-namespace Carby.JobManager.Functions.AbstractCarbyTask;
+namespace Carby.JobManager.Functions.Tasks.AbstractCarbyTask;
 
 internal sealed class AbstractCarbyTaskTriggerBindingContext<T>
 {

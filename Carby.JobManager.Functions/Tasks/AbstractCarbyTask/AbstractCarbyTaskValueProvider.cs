@@ -1,6 +1,6 @@
 using Microsoft.Azure.WebJobs.Host.Bindings;
 
-namespace Carby.JobManager.Functions.AbstractCarbyTask;
+namespace Carby.JobManager.Functions.Tasks.AbstractCarbyTask;
 
 internal class AbstractCarbyTaskValueProvider : IValueBinder
 {

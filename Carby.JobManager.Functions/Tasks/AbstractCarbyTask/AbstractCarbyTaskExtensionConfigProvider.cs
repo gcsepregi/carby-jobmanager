@@ -4,7 +4,7 @@ using Microsoft.Azure.WebJobs.Host.Bindings;
 using Microsoft.Azure.WebJobs.Host.Config;
 using Microsoft.Azure.WebJobs.Host.Triggers;
 
-namespace Carby.JobManager.Functions.AbstractCarbyTask;
+namespace Carby.JobManager.Functions.Tasks.AbstractCarbyTask;
 
 internal abstract class AbstractCarbyTaskExtensionConfigProvider<T> : IExtensionConfigProvider where T : Attribute
 {
