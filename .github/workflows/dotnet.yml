@@ -48,7 +48,8 @@ jobs:
       run: dotnet test /p:Configuration=Release --no-restore --no-build --verbosity normal
 
     - name: Package
-      run: dotnet pack --configuration Release --no-restore --no-build
+      if: startsWith(github.ref, 'refs/heads/release')
+      run: dotnet pack --configuration Release -p:Version=$BUILD_VERSION --no-restore --no-build
     
     - name: Publish
       if: startsWith(github.ref, 'refs/heads/release')
