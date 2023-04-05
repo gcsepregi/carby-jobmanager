@@ -7,10 +7,5 @@
                 "excludedTypes": "Request"
             }
         }
-    },
-    "extensions": {
-        "simpleTask": {
-            "name": "%settings_name_key%"
-        }
     }
 }
