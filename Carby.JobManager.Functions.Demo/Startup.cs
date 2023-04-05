@@ -1,9 +1,9 @@
 using Carby.JobManager.Functions.JobModel;
-using Carby.JobManager.Functions.Tests;
+using Carby.JobManager.Functions.Demo;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 
 [assembly: FunctionsStartup(typeof(Startup))]
-namespace Carby.JobManager.Functions.Tests;
+namespace Carby.JobManager.Functions.Demo;
 
 public class Startup : FunctionsStartup
 {

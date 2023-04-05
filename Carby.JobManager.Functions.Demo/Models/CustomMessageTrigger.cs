@@ -1,4 +1,4 @@
-namespace Carby.JobManager.Functions.Tests.Models;
+namespace Carby.JobManager.Functions.Demo.Models;
 
 public class CustomMessageTrigger
 {

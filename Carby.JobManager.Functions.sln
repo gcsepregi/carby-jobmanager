@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Carby.JobManager.Functions", "Carby.JobManager.Functions\Carby.JobManager.Functions.csproj", "{42B34DB6-333C-4A63-B779-22F3B02D0BD7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Carby.JobManager.Functions.Tests", "Carby.JobManager.Functions.Tests\Carby.JobManager.Functions.Tests.csproj", "{9ACB0D68-4E40-41DD-9D39-5AE26D1EA3EF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Carby.JobManager.Functions.Demo", "Carby.JobManager.Functions.Demo\Carby.JobManager.Functions.Demo.csproj", "{9ACB0D68-4E40-41DD-9D39-5AE26D1EA3EF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

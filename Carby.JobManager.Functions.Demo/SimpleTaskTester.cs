@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Carby.JobManager.Functions.Attributes;
 using Microsoft.Azure.WebJobs;
 
-namespace Carby.JobManager.Functions.Tests;
+namespace Carby.JobManager.Functions.Demo;
 
 public class SimpleTaskTester
 {

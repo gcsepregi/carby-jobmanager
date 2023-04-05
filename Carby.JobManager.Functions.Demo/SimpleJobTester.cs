@@ -1,12 +1,12 @@
 using System.Threading.Tasks;
 using Carby.JobManager.Functions.Attributes;
 using Carby.JobManager.Functions.CarbyClient;
-using Carby.JobManager.Functions.Tests.Models;
+using Carby.JobManager.Functions.Demo.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 
-namespace Carby.JobManager.Functions.Tests;
+namespace Carby.JobManager.Functions.Demo;
 
 public class SimpleJobTester
 {
