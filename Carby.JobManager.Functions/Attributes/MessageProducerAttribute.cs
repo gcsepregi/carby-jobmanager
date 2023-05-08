@@ -6,7 +6,7 @@ namespace Carby.JobManager.Functions.Attributes;
 [Binding]
 public class MessageProducerAttribute : Attribute
 {
-    public string Target { get; init; }
+    public string Target { get; }
     
     public MessageProducerAttribute(string target)
     {

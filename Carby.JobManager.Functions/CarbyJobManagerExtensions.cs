@@ -7,7 +7,7 @@ namespace Carby.JobManager.Functions;
 
 public static class CarbyJobManagerExtensions
 {
-    public static IWebJobsBuilder AddCarbyExtensions(this IWebJobsBuilder builder)
+    public static void AddCarbyExtensions(this IWebJobsBuilder builder)
     {
         if (builder == null)
         {
@@ -17,6 +17,5 @@ public static class CarbyJobManagerExtensions
         builder.AddExtension<MessageProducerExtensionConfigProvider>();
         
         builder.Services.AddSingleton<IAzureStorageFactory, AzureStorageFactory>();
-        return builder;
     }
 }

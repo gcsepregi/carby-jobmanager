@@ -5,6 +5,8 @@ using Microsoft.Azure.WebJobs.Host.Config;
 
 namespace Carby.JobManager.Functions.MessageProducer;
 
+// ReSharper disable once ClassNeverInstantiated.Global
+// This class is instantiated by the Azure Functions runtime.
 internal sealed class MessageProducerExtensionConfigProvider : IExtensionConfigProvider
 {
     private readonly IAzureStorageFactory _azureStorageFactory;
