@@ -51,4 +51,17 @@ public class MessagingProducerDemoTests
         var parameterInfo = parameters[0];
         parameterInfo.ParameterType.ShouldBe(typeof(HttpRequest));
     }
+    
+    [Test]
+    public void SendMessageWhenTriggered_HasMessageProducerAsSecondArgument()
+    {
+        var messageProducerDemo = new MessageProducerDemo();
+        var methodInfo = messageProducerDemo.GetType().GetMethod(nameof(MessageProducerDemo.SendMessageWhenTriggeredAsync));
+        methodInfo.ShouldNotBeNull();
+        var parameters = methodInfo.GetParameters();
+        parameters.ShouldNotBeEmpty();
+        parameters.Length.ShouldBe(2);
+        var parameterInfo = parameters[1];
+        parameterInfo.ParameterType.ShouldBe(typeof(IMessageProducer));
+    }
 }

@@ -8,7 +8,10 @@ namespace Carby.JobManager.Functions.Demo;
 public class MessageProducerDemo
 {
     [FunctionName(nameof(SendMessageWhenTriggeredAsync))]
-    public async Task SendMessageWhenTriggeredAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "send-message-when-triggered")] HttpRequest request)
+    public async Task SendMessageWhenTriggeredAsync(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "send-message-when-triggered")] HttpRequest request,
+        IMessageProducer messageProducer
+        )
     {
         
     }
