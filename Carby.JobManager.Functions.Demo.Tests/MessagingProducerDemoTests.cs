@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using NSubstitute;
