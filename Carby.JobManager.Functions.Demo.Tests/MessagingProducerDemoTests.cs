@@ -84,4 +84,21 @@ public class MessagingProducerDemoTests
                 )
             );
     }
+    
+    [Test]
+    public void SendMessageWhenTriggered_HasProperMessageProducerAttribute()
+    {
+        var messageProducerDemo = new MessageProducerDemo();
+        var methodInfo = messageProducerDemo.GetType().GetMethod(nameof(MessageProducerDemo.SendMessageWhenTriggeredAsync));
+        methodInfo.ShouldNotBeNull();
+        var parameters = methodInfo.GetParameters();
+        parameters.ShouldNotBeEmpty();
+        parameters.Length.ShouldBe(2);
+        var parameterInfo = parameters[1];
+        var customAttributes = parameterInfo.GetCustomAttributes(typeof(MessageProducerAttribute), false);
+        customAttributes.ShouldNotBeEmpty();
+        customAttributes.Length.ShouldBe(1);
+        var messageProducerAttribute = ((MessageProducerAttribute)customAttributes[0]);
+        messageProducerAttribute.MessageTarget.ShouldBe("message-target");
+    }
 }

@@ -14,7 +14,7 @@ public class MessageProducerDemo
     [FunctionName(nameof(SendMessageWhenTriggeredAsync))]
     public async Task SendMessageWhenTriggeredAsync(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "send-message-when-triggered")] HttpRequest request,
-        IMessageProducer messageProducer
+        [MessageProducer(MessageTarget = "message-target")] IMessageProducer messageProducer
         )
     {
         var message = JsonSerializer.Deserialize<Dictionary<string, object>>(request.Body);
