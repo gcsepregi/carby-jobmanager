@@ -1,4 +1,5 @@
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
 using NUnit.Framework;
 using Shouldly;
 
@@ -28,5 +29,14 @@ public class MessagingProducerDemoTests
         methodInfo.ShouldNotBeNull();
         var parameters = methodInfo.GetParameters();
         parameters.ShouldNotBeEmpty();
+        var parameterInfo = parameters[0];
+        var customAttributes = parameterInfo.GetCustomAttributes(typeof(HttpTriggerAttribute), false);
+        customAttributes.ShouldNotBeEmpty();
+        customAttributes.Length.ShouldBe(1);
+        var httpTriggerAttribute = ((HttpTriggerAttribute)customAttributes[0]);
+        httpTriggerAttribute.AuthLevel.ShouldBe(AuthorizationLevel.Anonymous);
+        httpTriggerAttribute.Methods.ShouldHaveSingleItem("post");
+        httpTriggerAttribute.Route.ShouldBe("send-message-when-triggered");
+        
     }
 }
