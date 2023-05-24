@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using NUnit.Framework;
@@ -37,6 +38,17 @@ public class MessagingProducerDemoTests
         httpTriggerAttribute.AuthLevel.ShouldBe(AuthorizationLevel.Anonymous);
         httpTriggerAttribute.Methods.ShouldHaveSingleItem("post");
         httpTriggerAttribute.Route.ShouldBe("send-message-when-triggered");
-        
+    }
+    
+    [Test]
+    public void SendMessageWhenTriggered_HasProperHttpRequestAsFirstParameter()
+    {
+        var messageProducerDemo = new MessageProducerDemo();
+        var methodInfo = messageProducerDemo.GetType().GetMethod(nameof(MessageProducerDemo.SendMessageWhenTriggeredAsync));
+        methodInfo.ShouldNotBeNull();
+        var parameters = methodInfo.GetParameters();
+        parameters.ShouldNotBeEmpty();
+        var parameterInfo = parameters[0];
+        parameterInfo.ParameterType.ShouldBe(typeof(HttpRequest));
     }
 }
