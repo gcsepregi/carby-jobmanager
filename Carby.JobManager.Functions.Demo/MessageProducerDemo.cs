@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.WebJobs;
@@ -13,6 +17,7 @@ public class MessageProducerDemo
         IMessageProducer messageProducer
         )
     {
-        
+        var message = JsonSerializer.Deserialize<Dictionary<string, object>>(request.Body);
+        await messageProducer.SendMessageAsync(message);
     }
 }

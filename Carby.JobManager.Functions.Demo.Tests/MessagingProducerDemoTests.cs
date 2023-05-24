@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
+using NSubstitute;
 using NUnit.Framework;
 using Shouldly;
 
@@ -63,5 +65,23 @@ public class MessagingProducerDemoTests
         parameters.Length.ShouldBe(2);
         var parameterInfo = parameters[1];
         parameterInfo.ParameterType.ShouldBe(typeof(IMessageProducer));
+    }
+    
+    [Test]
+    public async Task SendMessageWhenTriggered_CallsMessageProducer_SendMessageAsync()
+    {
+        var messageProducerDemo = new MessageProducerDemo();
+        var messageProducer = Substitute.For<IMessageProducer>();
+        var request = Substitute.For<HttpRequest>();
+        
+        request.Body.Returns(new MemoryStream("{\"hello\":\"from test\"}".Select(c => (byte)c).ToArray()));
+        
+        await messageProducerDemo.SendMessageWhenTriggeredAsync(request, messageProducer);
+        
+        await messageProducer.Received(1).SendMessageAsync(
+            Arg.Is<Dictionary<string, object>>(
+                p => p.ContainsKey("hello") && p["hello"].ToString() == "from test"
+                )
+            );
     }
 }
